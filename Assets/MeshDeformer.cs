@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class MeshDeformer : MonoBehaviour
 {
@@ -7,6 +8,8 @@ public class MeshDeformer : MonoBehaviour
     private Vector3[] modifiedVertices;
     public float deformationStrength = 0.1f;
     private MeshCollider meshCollider;
+    private int[] originalTriangles;
+    private Dictionary<int, List<int>> vertexToTriangles = new Dictionary<int, List<int>>();
 
     void Start()
     {
@@ -15,6 +18,25 @@ public class MeshDeformer : MonoBehaviour
         originalVertices = mesh.vertices;
         modifiedVertices = mesh.vertices;
         meshCollider = GetComponent<MeshCollider>();
+        originalTriangles = mesh.triangles;
+
+        for (int i = 0; i < originalTriangles.Length; i += 3)
+        {
+            for (int j = 0; j < 3; j++)
+            {
+                int vertexIndex = originalTriangles[i + j];
+                if (!vertexToTriangles.ContainsKey(vertexIndex))
+                {
+                    vertexToTriangles[vertexIndex] = new List<int>();
+                }
+                vertexToTriangles[vertexIndex].Add(i / 3); // Add the triangle index
+            }
+        }
+        
+        // foreach(var pair in vertexToTriangles)
+        // {
+        //     Debug.Log(pair.Key + ": " + string.Join(", ", pair.Value));
+        // }
     }
 
     void UpdateMesh()
@@ -35,13 +57,12 @@ public class MeshDeformer : MonoBehaviour
     {
         foreach (ContactPoint contact in collision.contacts)
         {
-            Vector3 moveDirection = transform.position - collision.transform.position;
-            DeformVertices(contact.point, moveDirection);
+            DeformVertices(contact.point, collision.transform.position);
         }
         UpdateMesh();
     }
 
-    void DeformVertices(Vector3 contactPoint, Vector3 moveDirection)
+    void DeformVertices(Vector3 contactPoint , Vector3 collisionPoint)
     {
         for (int i = 0; i < modifiedVertices.Length; i++)
         {
@@ -54,39 +75,40 @@ public class MeshDeformer : MonoBehaviour
             {
                 Vector3 deformation = new Vector3(0, 0, 1f) * deformationStrength * (1 - distance / deformationStrength);
                 modifiedVertices[i] += transform.InverseTransformDirection(deformation);
-                
-                int[] triangles = mesh.triangles;
-                for (int j = 0; j < triangles.Length; j += 3)
+
+                if (vertexToTriangles.ContainsKey(i) && (modifiedVertices[i].z >= 1.2f))
                 {
-                    // 三角形のすべての頂点がz軸の値が1.0fを超えている場合、その三角形を削除する
-                    if (modifiedVertices[triangles[j]].z >= 1.0f && modifiedVertices[triangles[j + 1]].z >= 1.0f && modifiedVertices[triangles[j + 2]].z >= 1.0f && originalVertices[triangles[j]].z < 1.0f)
+                    foreach (int triangleIndex in vertexToTriangles[i])
                     {
-                        triangles[j] = triangles[j + 1] = triangles[j + 2] = 0;
-                    }
-                    else if ((triangles[j] == i || triangles[j + 1] == i || triangles[j + 2] == i) && originalVertices[triangles[j]].z >= 1.0f)
-                    {
-                        triangles[j] = triangles[j + 1] = triangles[j + 2] = 0;
-                    }
-                    // 一部のみ頂点のz軸の値が1.0fを超えている場合、頂点のZ座標を1にする
-                    else 
-                    {
-                        if(modifiedVertices[triangles[j]].z > 1.0f)
+                        int baseIndex = triangleIndex * 3;
+                        if(modifiedVertices[originalTriangles[baseIndex]].z >= 1.0f && modifiedVertices[originalTriangles[baseIndex + 1]].z >= 1.0f && modifiedVertices[originalTriangles[baseIndex + 2]].z >= 1.0f)
                         {
-                            modifiedVertices[triangles[j]].z = 1.0f;
+                            if(Vector3.Distance(worldVertex, collisionPoint)< 0.4f)
+                            {
+                                originalTriangles[baseIndex] = originalTriangles[baseIndex + 1] = originalTriangles[baseIndex + 2] = 0;
+                                continue;
+                            }
+                            
                         }
                         
-                        if(modifiedVertices[triangles[j + 1]].z > 1.0f)
+                        if(modifiedVertices[originalTriangles[baseIndex]].z >= 1.0f)
                         {
-                            modifiedVertices[triangles[j + 1]].z = 1.0f;
+                            modifiedVertices[originalTriangles[baseIndex]].z = 1.0f;
                         }
                         
-                        if(modifiedVertices[triangles[j + 2]].z > 1.0f)
+                        if(modifiedVertices[originalTriangles[baseIndex + 1]].z >= 1.0f)
                         {
-                            modifiedVertices[triangles[j + 2]].z = 1.0f;
+                            modifiedVertices[originalTriangles[baseIndex + 1]].z = 1.0f;
                         }
+                        
+                        if(modifiedVertices[originalTriangles[baseIndex + 2]].z >= 1.0f)
+                        {
+                            modifiedVertices[originalTriangles[baseIndex + 2]].z = 1.0f;
+                        }
+
                     }
-                }
-                mesh.triangles = triangles; 
+                    mesh.triangles = originalTriangles;
+                } 
 
             }
 
