@@ -3,28 +3,31 @@ using System.Collections.Generic;
 
 public class MeshDeformer : MonoBehaviour
 {
+    private GameObject _cube;
+    [SerializeField] private GameObject sphere;
     private Mesh mesh;
-    private Vector3[] originalVertices;
     private Vector3[] modifiedVertices;
     public float deformationStrength = 0.1f;
     private MeshCollider meshCollider;
-    private int[] originalTriangles;
+    private int[] modifiedTriangles;
     private Dictionary<int, List<int>> vertexToTriangles = new Dictionary<int, List<int>>();
+    private float elapsedTime = 0f;
 
     void Start()
     {
         // Cubeのメッシュを取得
         mesh = GetComponent<MeshFilter>().mesh;
-        originalVertices = mesh.vertices;
         modifiedVertices = mesh.vertices;
         meshCollider = GetComponent<MeshCollider>();
-        originalTriangles = mesh.triangles;
+        modifiedTriangles = mesh.triangles;
 
-        for (int i = 0; i < originalTriangles.Length; i += 3)
+        _cube = this.gameObject;
+
+        for (int i = 0; i < modifiedTriangles.Length; i += 3)
         {
             for (int j = 0; j < 3; j++)
             {
-                int vertexIndex = originalTriangles[i + j];
+                int vertexIndex = modifiedTriangles[i + j];
                 if (!vertexToTriangles.ContainsKey(vertexIndex))
                 {
                     vertexToTriangles[vertexIndex] = new List<int>();
@@ -37,6 +40,16 @@ public class MeshDeformer : MonoBehaviour
         // {
         //     Debug.Log(pair.Key + ": " + string.Join(", ", pair.Value));
         // }
+    }
+
+    private void Update()
+    {
+        elapsedTime += Time.deltaTime;
+        if(elapsedTime > 10f)
+        {
+            elapsedTime = 0f;
+            Destroy(_cube);
+        }
     }
 
     void UpdateMesh()
@@ -81,33 +94,33 @@ public class MeshDeformer : MonoBehaviour
                     foreach (int triangleIndex in vertexToTriangles[i])
                     {
                         int baseIndex = triangleIndex * 3;
-                        if(modifiedVertices[originalTriangles[baseIndex]].z >= 1.0f && modifiedVertices[originalTriangles[baseIndex + 1]].z >= 1.0f && modifiedVertices[originalTriangles[baseIndex + 2]].z >= 1.0f)
+                        if(modifiedVertices[modifiedTriangles[baseIndex]].z >= 1.0f && modifiedVertices[modifiedTriangles[baseIndex + 1]].z >= 1.0f && modifiedVertices[modifiedTriangles[baseIndex + 2]].z >= 1.0f)
                         {
                             if(Vector3.Distance(worldVertex, collisionPoint)< 0.4f)
                             {
-                                originalTriangles[baseIndex] = originalTriangles[baseIndex + 1] = originalTriangles[baseIndex + 2] = 0;
+                                modifiedTriangles[baseIndex] = modifiedTriangles[baseIndex + 1] = modifiedTriangles[baseIndex + 2] = 0;
                                 continue;
                             }
                             
                         }
                         
-                        if(modifiedVertices[originalTriangles[baseIndex]].z >= 1.0f)
+                        if(modifiedVertices[modifiedTriangles[baseIndex]].z >= 1.0f)
                         {
-                            modifiedVertices[originalTriangles[baseIndex]].z = 1.0f;
+                            modifiedVertices[modifiedTriangles[baseIndex]].z = 1.0f;
                         }
                         
-                        if(modifiedVertices[originalTriangles[baseIndex + 1]].z >= 1.0f)
+                        if(modifiedVertices[modifiedTriangles[baseIndex + 1]].z >= 1.0f)
                         {
-                            modifiedVertices[originalTriangles[baseIndex + 1]].z = 1.0f;
+                            modifiedVertices[modifiedTriangles[baseIndex + 1]].z = 1.0f;
                         }
                         
-                        if(modifiedVertices[originalTriangles[baseIndex + 2]].z >= 1.0f)
+                        if(modifiedVertices[modifiedTriangles[baseIndex + 2]].z >= 1.0f)
                         {
-                            modifiedVertices[originalTriangles[baseIndex + 2]].z = 1.0f;
+                            modifiedVertices[modifiedTriangles[baseIndex + 2]].z = 1.0f;
                         }
 
                     }
-                    mesh.triangles = originalTriangles;
+                    mesh.triangles = modifiedTriangles;
                 } 
 
             }

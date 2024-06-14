@@ -10,8 +10,7 @@ public class SphereMover : MonoBehaviour
 
     private void Start() 
     {
-        var sequence = DOTween.Sequence();
-        sequence.Append(transform.DOMoveZ(3.0f, duration).SetEase(Ease.Linear))
-                /*.Join(transform.DOScale(new Vector3(1, 1, 1), 30.0f).SetEase(Ease.Linear))*/;
+        
+        transform.DOMoveZ(3.0f, duration).SetEase(Ease.Linear).SetLoops(-1, LoopType.Restart);
     }
 }
