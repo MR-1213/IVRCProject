@@ -7,6 +7,7 @@ public class MeshDeformer : MonoBehaviour
     [SerializeField] private GameObject sphere;
     private Mesh mesh;
     private Vector3[] modifiedVertices;
+    private Vector3[] originalVertices;
     public float deformationStrength = 0.1f;
     private MeshCollider meshCollider;
     private int[] modifiedTriangles;
@@ -20,6 +21,7 @@ public class MeshDeformer : MonoBehaviour
         modifiedVertices = mesh.vertices;
         meshCollider = GetComponent<MeshCollider>();
         modifiedTriangles = mesh.triangles;
+        originalVertices = mesh.vertices;
 
         _cube = this.gameObject;
 
@@ -35,22 +37,17 @@ public class MeshDeformer : MonoBehaviour
                 vertexToTriangles[vertexIndex].Add(i / 3); // Add the triangle index
             }
         }
-        
-        // foreach(var pair in vertexToTriangles)
-        // {
-        //     Debug.Log(pair.Key + ": " + string.Join(", ", pair.Value));
-        // }
     }
 
-    private void Update()
-    {
-        elapsedTime += Time.deltaTime;
-        if(elapsedTime > 10f)
-        {
-            elapsedTime = 0f;
-            Destroy(_cube);
-        }
-    }
+    // private void Update()
+    // {
+    //     elapsedTime += Time.deltaTime;
+    //     if(elapsedTime > 10f)
+    //     {
+    //         elapsedTime = 0f;
+    //         Destroy(_cube);
+    //     }
+    // }
 
     void UpdateMesh()
     {
@@ -96,7 +93,7 @@ public class MeshDeformer : MonoBehaviour
                         int baseIndex = triangleIndex * 3;
                         if(modifiedVertices[modifiedTriangles[baseIndex]].z >= 1.0f && modifiedVertices[modifiedTriangles[baseIndex + 1]].z >= 1.0f && modifiedVertices[modifiedTriangles[baseIndex + 2]].z >= 1.0f)
                         {
-                            if(Vector3.Distance(worldVertex, collisionPoint)< 0.4f)
+                            if(Vector3.Distance(worldVertex, collisionPoint)< 0.7f)
                             {
                                 modifiedTriangles[baseIndex] = modifiedTriangles[baseIndex + 1] = modifiedTriangles[baseIndex + 2] = 0;
                                 continue;

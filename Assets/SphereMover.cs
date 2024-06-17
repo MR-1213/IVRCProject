@@ -11,6 +11,6 @@ public class SphereMover : MonoBehaviour
     private void Start() 
     {
         
-        transform.DOMoveZ(3.0f, duration).SetEase(Ease.Linear).SetLoops(-1, LoopType.Restart);
+        transform.DOMoveZ(3.0f, duration).SetEase(Ease.Linear);//.SetLoops(-1, LoopType.Restart);
     }
 }
