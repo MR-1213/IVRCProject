@@ -3,51 +3,18 @@ using System.Collections.Generic;
 
 public class MeshDeformer : MonoBehaviour
 {
-    private GameObject _cube;
-    [SerializeField] private GameObject sphere;
     private Mesh mesh;
     private Vector3[] modifiedVertices;
-    private Vector3[] originalVertices;
     public float deformationStrength = 0.1f;
     private MeshCollider meshCollider;
-    private int[] modifiedTriangles;
-    private Dictionary<int, List<int>> vertexToTriangles = new Dictionary<int, List<int>>();
-    private float elapsedTime = 0f;
 
     void Start()
     {
-        // Cubeのメッシュを取得
         mesh = GetComponent<MeshFilter>().mesh;
-        modifiedVertices = mesh.vertices;
         meshCollider = GetComponent<MeshCollider>();
-        modifiedTriangles = mesh.triangles;
-        originalVertices = mesh.vertices;
 
-        _cube = this.gameObject;
-
-        for (int i = 0; i < modifiedTriangles.Length; i += 3)
-        {
-            for (int j = 0; j < 3; j++)
-            {
-                int vertexIndex = modifiedTriangles[i + j];
-                if (!vertexToTriangles.ContainsKey(vertexIndex))
-                {
-                    vertexToTriangles[vertexIndex] = new List<int>();
-                }
-                vertexToTriangles[vertexIndex].Add(i / 3); // Add the triangle index
-            }
-        }
+        modifiedVertices = mesh.vertices;
     }
-
-    // private void Update()
-    // {
-    //     elapsedTime += Time.deltaTime;
-    //     if(elapsedTime > 10f)
-    //     {
-    //         elapsedTime = 0f;
-    //         Destroy(_cube);
-    //     }
-    // }
 
     void UpdateMesh()
     {
@@ -74,55 +41,57 @@ public class MeshDeformer : MonoBehaviour
 
     void DeformVertices(Vector3 contactPoint , Vector3 collisionPoint)
     {
+        List<int> triangles = new List<int>(mesh.triangles);
         for (int i = 0; i < modifiedVertices.Length; i++)
         {
             // 頂点座標をワールド座標に変換
             Vector3 worldVertex = transform.TransformPoint(modifiedVertices[i]);
             // 頂点と衝突点の距離を計算
             float distance = Vector3.Distance(worldVertex, contactPoint);
+            float pointDistance = Vector3.Distance(worldVertex, collisionPoint);
             // 衝突点からの距離に応じて頂点を変形
-            if (distance < deformationStrength)
+            if (distance < deformationStrength && pointDistance < 0.6f)
             {
                 Vector3 deformation = new Vector3(0, 0, 1f) * deformationStrength * (1 - distance / deformationStrength);
                 modifiedVertices[i] += transform.InverseTransformDirection(deformation);
-
-                if (vertexToTriangles.ContainsKey(i) && (modifiedVertices[i].z >= 1.2f))
-                {
-                    foreach (int triangleIndex in vertexToTriangles[i])
-                    {
-                        int baseIndex = triangleIndex * 3;
-                        if(modifiedVertices[modifiedTriangles[baseIndex]].z >= 1.0f && modifiedVertices[modifiedTriangles[baseIndex + 1]].z >= 1.0f && modifiedVertices[modifiedTriangles[baseIndex + 2]].z >= 1.0f)
-                        {
-                            if(Vector3.Distance(worldVertex, collisionPoint)< 0.7f)
-                            {
-                                modifiedTriangles[baseIndex] = modifiedTriangles[baseIndex + 1] = modifiedTriangles[baseIndex + 2] = 0;
-                                continue;
-                            }
-                            
-                        }
-                        
-                        if(modifiedVertices[modifiedTriangles[baseIndex]].z >= 1.0f)
-                        {
-                            modifiedVertices[modifiedTriangles[baseIndex]].z = 1.0f;
-                        }
-                        
-                        if(modifiedVertices[modifiedTriangles[baseIndex + 1]].z >= 1.0f)
-                        {
-                            modifiedVertices[modifiedTriangles[baseIndex + 1]].z = 1.0f;
-                        }
-                        
-                        if(modifiedVertices[modifiedTriangles[baseIndex + 2]].z >= 1.0f)
-                        {
-                            modifiedVertices[modifiedTriangles[baseIndex + 2]].z = 1.0f;
-                        }
-
-                    }
-                    mesh.triangles = modifiedTriangles;
-                } 
-
             }
 
-
         }
+
+        
+        // Check each triangle
+        for (int i = 0; i < triangles.Count; i += 3)
+        {
+            Vector3 v1 = modifiedVertices[triangles[i]];
+            Vector3 v2 = modifiedVertices[triangles[i + 1]];
+            Vector3 v3 = modifiedVertices[triangles[i + 2]];
+
+            // If all vertices of the triangle have a z-coordinate greater than 1.0f, remove the triangle
+            if (v1.z > 1.0f && v2.z > 1.0f && v3.z > 1.0f)
+            {
+                triangles.RemoveRange(i, 3);
+                i -= 3;
+            }
+            // If one vertex has a z-coordinate greater than 1.2f and the other two vertices have a z-coordinate less than or equal to 1.0f, set the z-coordinate of the exceeding vertex to 1.0f
+            else if (v1.z > 1.2f)
+            {
+                v1.z = 1.0f;
+                modifiedVertices[triangles[i]] = v1;
+            }
+            else if (v2.z > 1.2f)
+            {
+                v2.z = 1.0f;
+                modifiedVertices[triangles[i + 1]] = v2;
+            }
+            else if (v3.z > 1.2f)
+            {
+                v3.z = 1.0f;
+                modifiedVertices[triangles[i + 2]] = v3;
+            }
+            
+        }
+
+        // Update the mesh with the new triangles
+        mesh.triangles = triangles.ToArray();
     }
 }
