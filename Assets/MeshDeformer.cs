@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
 
 public class MeshDeformer : MonoBehaviour
 {
@@ -7,11 +8,13 @@ public class MeshDeformer : MonoBehaviour
     private Vector3[] modifiedVertices;
     public float deformationStrength = 0.1f;
     private MeshCollider meshCollider;
+    private List<int> triangles;
 
     void Start()
     {
         mesh = GetComponent<MeshFilter>().mesh;
         meshCollider = GetComponent<MeshCollider>();
+        triangles = new List<int>(mesh.triangles);
 
         modifiedVertices = mesh.vertices;
     }
@@ -39,11 +42,19 @@ public class MeshDeformer : MonoBehaviour
         UpdateMesh();
     }
 
-    void DeformVertices(Vector3 contactPoint , Vector3 collisionPoint)
+    private void DeformVertices(Vector3 contactPoint , Vector3 collisionPoint)
     {
-        List<int> triangles = new List<int>(mesh.triangles);
         for (int i = 0; i < modifiedVertices.Length; i++)
         {
+            if(i <= 2178 || (i >= 3268 && i <= 4356) || i >= 5446)
+            {
+                continue;
+            }
+            // 頂点を赤くする
+            // Debug.DrawLine(transform.TransformPoint(modifiedVertices[i]), transform.TransformPoint(modifiedVertices[i]) + Vector3.up * 0.1f, Color.red);
+            // Debug.Log(i);
+            // yield return null;
+            
             // 頂点座標をワールド座標に変換
             Vector3 worldVertex = transform.TransformPoint(modifiedVertices[i]);
             // 頂点と衝突点の距離を計算
@@ -57,22 +68,25 @@ public class MeshDeformer : MonoBehaviour
             }
 
         }
-
         
-        // Check each triangle
+        // 三角形の削除操作
         for (int i = 0; i < triangles.Count; i += 3)
         {
+            if(triangles[i] <= 2178 || (triangles[i] >= 3268 && triangles[i] <= 4356) || triangles[i] >= 5446)
+            {
+                continue;
+            }
             Vector3 v1 = modifiedVertices[triangles[i]];
             Vector3 v2 = modifiedVertices[triangles[i + 1]];
             Vector3 v3 = modifiedVertices[triangles[i + 2]];
 
-            // If all vertices of the triangle have a z-coordinate greater than 1.0f, remove the triangle
+             
             if (v1.z > 1.0f && v2.z > 1.0f && v3.z > 1.0f)
             {
                 triangles.RemoveRange(i, 3);
                 i -= 3;
             }
-            // If one vertex has a z-coordinate greater than 1.2f and the other two vertices have a z-coordinate less than or equal to 1.0f, set the z-coordinate of the exceeding vertex to 1.0f
+            
             else if (v1.z > 1.2f)
             {
                 v1.z = 1.0f;
@@ -90,8 +104,8 @@ public class MeshDeformer : MonoBehaviour
             }
             
         }
-
-        // Update the mesh with the new triangles
+        
+        // 三角形のリストを更新
         mesh.triangles = triangles.ToArray();
     }
 }
