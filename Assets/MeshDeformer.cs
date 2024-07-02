@@ -14,7 +14,9 @@ public class MeshDeformer : MonoBehaviour
     private int[] _lastVertexIndex = new int[6]; //+Z方向を基準として、上、下、奥、左、手前、右の面の最後尾の頂点インデックス
     private int[] _meltVertices_1 = new int[2]; // 頂点の変形操作を行う頂点インデックスの範囲1(プレイヤーがいる方向の面)
     private int[] _meltVertices_2 = new int[2] {-1, -1}; // 頂点の変形操作を行う頂点インデックスの範囲2(ななめ方向であった場合のとなりの面)
+    private int[] _meltVertices_3 = new int[2] {-1, -1}; // 頂点の変形操作を行う頂点インデックスの範囲3(貫通する面)
     private int[] _penetrationVertices_1 = new int[2];
+    private int[] _penetrationVertices_2 = new int[2] {-1, -1};
     private Vector3 _meltDirection; // 融ける方向のベクトル(前後左右ななめのいずれか)
     private bool _isFirst = true; // 衝突時、初回のみ処理を行うためのフラグ
 
@@ -29,8 +31,6 @@ public class MeshDeformer : MonoBehaviour
         modifiedVertices = mesh.vertices;
         // 頂点の数を確認し、各面の最後尾の頂点インデックスを確認する
         CheckVerticesCount();
-        _penetrationVertices_1[0] = _lastVertexIndex[1] + 1;
-        _penetrationVertices_1[1] = _lastVertexIndex[2];
     }
 
     private void CheckVerticesCount()
@@ -58,24 +58,32 @@ public class MeshDeformer : MonoBehaviour
                 //Debug.Log("奥の面");
                 _meltVertices_1[0] = _lastVertexIndex[1] + 1; // 対象の面の最初の頂点インデックス
                 _meltVertices_1[1] = _lastVertexIndex[2]; // 対象の面の最後の頂点インデックス
+                _penetrationVertices_1[2] = _lastVertexIndex[3] + 1;
+                _penetrationVertices_1[3] = _lastVertexIndex[4];
                 _meltDirection = new Vector3(0, 0, -1); // 融ける方向のベクトル
                 break;
             case float n when (n >= 45f && n < 135f):
                 //Debug.Log("右の面");
                 _meltVertices_1[0] = _lastVertexIndex[4] + 1;
                 _meltVertices_1[1] = _lastVertexIndex[5];
+                _penetrationVertices_1[0] = _lastVertexIndex[2] + 1;
+                _penetrationVertices_1[1] = _lastVertexIndex[3];
                 _meltDirection = new Vector3(-1, 0, 0);
                 break;
             case float n when (n >= 135f && n < 225f):
                 //Debug.Log("手前の面");
                 _meltVertices_1[0] = _lastVertexIndex[3] + 1;
                 _meltVertices_1[1] = _lastVertexIndex[4];
+                _penetrationVertices_1[0] = _lastVertexIndex[1] + 1;
+                _penetrationVertices_1[1] = _lastVertexIndex[2];
                 _meltDirection = new Vector3(0, 0, 1);
                 break;
             case float n when (n >= 225f && n < 315f):
                 //Debug.Log("左の面");
                 _meltVertices_1[0] = _lastVertexIndex[2] + 1;
                 _meltVertices_1[1] = _lastVertexIndex[3];
+                _penetrationVertices_1[0] = _lastVertexIndex[4] + 1;
+                _penetrationVertices_1[1] = _lastVertexIndex[5];
                 _meltDirection = new Vector3(1, 0, 0);
                 break;
         }
@@ -118,10 +126,52 @@ public class MeshDeformer : MonoBehaviour
             }
             else
             {
-                Debug.Log("Nothing");
+                //Debug.Log("Nothing");
             }
         }
         
+    }
+
+    private void CheckAdditionalMeltFace()
+    {
+        // Cubeの正面に対して、どの角度にプレイヤーがいるかを判定する
+        float angle = Vector3.Angle(transform.forward, _sphere.position - transform.position);
+        // 外積を求める
+        Vector3 cross = Vector3.Cross(transform.forward, _sphere.position - transform.position);
+        // 右回り360度表現に変換
+        float playerAngle = cross.y > 0 ? angle : (360 - angle);
+
+        switch(playerAngle)
+        {
+            case float n when ((n >= 0f && n < 45f) || (n >= 315f && n <= 360f)):
+                //Debug.Log("奥の面");
+                _meltVertices_3[0] = _lastVertexIndex[1] + 1; // 対象の面の最初の頂点インデックス
+                _meltVertices_3[1] = _lastVertexIndex[2]; // 対象の面の最後の頂点インデックス
+                _penetrationVertices_2[0] = _lastVertexIndex[1] + 1;
+                _penetrationVertices_2[1] = _lastVertexIndex[2];
+                break;
+            case float n when (n >= 45f && n < 135f):
+                //Debug.Log("右の面");
+                _meltVertices_3[0] = _lastVertexIndex[4] + 1;
+                _meltVertices_3[1] = _lastVertexIndex[5];
+                _penetrationVertices_2[0] = _lastVertexIndex[4] + 1;
+                _penetrationVertices_2[1] = _lastVertexIndex[5];
+                break;
+            case float n when (n >= 135f && n < 225f):
+                //Debug.Log("手前の面");
+                _meltVertices_3[0] = _lastVertexIndex[3] + 1;
+                _meltVertices_3[1] = _lastVertexIndex[4];
+                _penetrationVertices_2[0] = _lastVertexIndex[3] + 1;
+                _penetrationVertices_2[1] = _lastVertexIndex[4];
+                break;
+            case float n when (n >= 225f && n < 315f):
+                //Debug.Log("左の面");
+                _meltVertices_3[0] = _lastVertexIndex[2] + 1;
+                _meltVertices_3[1] = _lastVertexIndex[3];
+                _penetrationVertices_2[0] = _lastVertexIndex[2] + 1;
+                _penetrationVertices_2[1] = _lastVertexIndex[3];
+                break;
+        }
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -137,6 +187,8 @@ public class MeshDeformer : MonoBehaviour
             _isFirst = false;
             CheckMeltFace();
         }
+
+        CheckAdditionalMeltFace();
 
         foreach (ContactPoint contact in collision.contacts)
         {
@@ -171,12 +223,18 @@ public class MeshDeformer : MonoBehaviour
                 {
                     if(!(_meltVertices_2[0] <= i && i <= _meltVertices_2[1]))
                     {
-                        continue;
+                        if(_meltVertices_3[0] != -1)
+                        {
+                            if(!(_meltVertices_3[0] <= i && i <= _meltVertices_3[1]))
+                            {
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            continue;
+                        }
                     }
-                }
-                else
-                {
-                    continue;
                 }
             }
             
@@ -204,9 +262,16 @@ public class MeshDeformer : MonoBehaviour
         for (int i = 0; i < triangles.Count; i += 3)
         {
             // 処理する頂点の範囲外であれば、スキップ
-            if(!(_meltVertices_1[0] <= triangles[i] && triangles[i] <= _meltVertices_1[1]))
+            if(!(_penetrationVertices_1[0] <= triangles[i] && triangles[i] <= _penetrationVertices_1[1]) && !(_meltVertices_1[0] <= triangles[i] && triangles[i] <= _meltVertices_1[1]))
             {
-                if(!(_penetrationVertices_1[0] <= triangles[i] && triangles[i] <= _penetrationVertices_1[1]))
+                if(_penetrationVertices_2[0] != -1)
+                {
+                    if(!(_penetrationVertices_2[0] <= triangles[i] && triangles[i] <= _penetrationVertices_2[1]))
+                    {
+                        continue;
+                    }
+                }
+                else
                 {
                     continue;
                 }
@@ -216,24 +281,44 @@ public class MeshDeformer : MonoBehaviour
             Vector3 v2 = modifiedVertices[triangles[i + 1]];
             Vector3 v3 = modifiedVertices[triangles[i + 2]];
              
-            if (v1.z > 1.0f && v2.z > 1.0f && v3.z > 1.0f)
+            if (Mathf.Abs(v1.z) > 1.0f && Mathf.Abs(v2.z) > 1.0f && Mathf.Abs(v3.z) > 1.0f)
             {
                 triangles.RemoveRange(i, 3);
                 i -= 3;
             }
-            else if (v1.z > 1.2f)
+            else if(Mathf.Abs(v1.x) > 1.0f && Mathf.Abs(v2.x) > 1.0f && Mathf.Abs(v3.x) > 1.0f)
             {
-                v1.z = 1.0f;
+                triangles.RemoveRange(i, 3);
+                i -= 3;
+            }
+            else if (Mathf.Abs(v1.z) > 1.2f)
+            {
+                v1.z = v1.z > 0 ? 1.0f : -1.0f;
                 modifiedVertices[triangles[i]] = v1;
             }
-            else if (v2.z > 1.2f)
+            else if (Mathf.Abs(v2.z) > 1.2f)
             {
-                v2.z = 1.0f;
+                v2.z = v2.z > 0 ? 1.0f : -1.0f;
                 modifiedVertices[triangles[i + 1]] = v2;
             }
-            else if (v3.z > 1.2f)
+            else if (Mathf.Abs(v3.z) > 1.2f)
             {
-                v3.z = 1.0f;
+                v3.z = v3.z > 0 ? 1.0f : -1.0f;
+                modifiedVertices[triangles[i + 2]] = v3;
+            }
+            else if(Mathf.Abs(v1.x) > 1.2f)
+            {
+                v1.x = v1.x > 0 ? 1.0f : -1.0f;
+                modifiedVertices[triangles[i]] = v1;
+            }
+            else if(Mathf.Abs(v2.x) > 1.2f)
+            {
+                v2.x = v2.x > 0 ? 1.0f : -1.0f;
+                modifiedVertices[triangles[i + 1]] = v2;
+            }
+            else if(Mathf.Abs(v3.x) > 1.2f)
+            {
+                v3.x = v3.x > 0 ? 1.0f : -1.0f;
                 modifiedVertices[triangles[i + 2]] = v3;
             }
             
@@ -241,5 +326,5 @@ public class MeshDeformer : MonoBehaviour
         
         // 三角形のリストを更新
         mesh.triangles = triangles.ToArray();
-    }
+    } 
 }
