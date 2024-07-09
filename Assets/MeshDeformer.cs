@@ -17,6 +17,8 @@ public class MeshDeformer : MonoBehaviour
     private int[] _meltVertices_3 = new int[2] {-1, -1}; // 頂点の変形操作を行う頂点インデックスの範囲3(貫通する面)
     private int[] _penetrationVertices_1 = new int[2];
     private int[] _penetrationVertices_2 = new int[2] {-1, -1};
+
+    private List<int> _meltVertices = new List<int>();
     private Vector3 _meltDirection; // 融ける方向のベクトル(前後左右ななめのいずれか)
     private bool _isFirst = true; // 衝突時、初回のみ処理を行うためのフラグ
 
@@ -237,6 +239,11 @@ public class MeshDeformer : MonoBehaviour
                     }
                 }
             }
+
+            if(_meltVertices.Contains(i))
+            {
+                continue;
+            }
             
             // 頂点を赤くする
             // Debug.DrawLine(transform.TransformPoint(modifiedVertices[i]), transform.TransformPoint(modifiedVertices[i]) + Vector3.up * 0.1f, Color.red);
@@ -277,6 +284,8 @@ public class MeshDeformer : MonoBehaviour
                 }
             }
 
+            
+
             Vector3 v1 = modifiedVertices[triangles[i]];
             Vector3 v2 = modifiedVertices[triangles[i + 1]];
             Vector3 v3 = modifiedVertices[triangles[i + 2]];
@@ -284,42 +293,54 @@ public class MeshDeformer : MonoBehaviour
             if (Mathf.Abs(v1.z) > 1.0f && Mathf.Abs(v2.z) > 1.0f && Mathf.Abs(v3.z) > 1.0f)
             {
                 triangles.RemoveRange(i, 3);
+                _meltVertices.Add(triangles[i]);
+                _meltVertices.Add(triangles[i + 1]);
+                _meltVertices.Add(triangles[i + 2]);
                 i -= 3;
             }
             else if(Mathf.Abs(v1.x) > 1.0f && Mathf.Abs(v2.x) > 1.0f && Mathf.Abs(v3.x) > 1.0f)
             {
                 triangles.RemoveRange(i, 3);
+                _meltVertices.Add(triangles[i]);
+                _meltVertices.Add(triangles[i + 1]);
+                _meltVertices.Add(triangles[i + 2]);
                 i -= 3;
             }
             else if (Mathf.Abs(v1.z) > 1.2f)
             {
                 v1.z = v1.z > 0 ? 1.0f : -1.0f;
                 modifiedVertices[triangles[i]] = v1;
+                _meltVertices.Add(triangles[i]);
             }
             else if (Mathf.Abs(v2.z) > 1.2f)
             {
                 v2.z = v2.z > 0 ? 1.0f : -1.0f;
                 modifiedVertices[triangles[i + 1]] = v2;
+                _meltVertices.Add(triangles[i + 1]);
             }
             else if (Mathf.Abs(v3.z) > 1.2f)
             {
                 v3.z = v3.z > 0 ? 1.0f : -1.0f;
                 modifiedVertices[triangles[i + 2]] = v3;
+                _meltVertices.Add(triangles[i + 2]);
             }
             else if(Mathf.Abs(v1.x) > 1.2f)
             {
                 v1.x = v1.x > 0 ? 1.0f : -1.0f;
                 modifiedVertices[triangles[i]] = v1;
+                _meltVertices.Add(triangles[i]);
             }
             else if(Mathf.Abs(v2.x) > 1.2f)
             {
                 v2.x = v2.x > 0 ? 1.0f : -1.0f;
                 modifiedVertices[triangles[i + 1]] = v2;
+                _meltVertices.Add(triangles[i + 1]);
             }
             else if(Mathf.Abs(v3.x) > 1.2f)
             {
                 v3.x = v3.x > 0 ? 1.0f : -1.0f;
                 modifiedVertices[triangles[i + 2]] = v3;
+                _meltVertices.Add(triangles[i + 2]);
             }
             
         }
