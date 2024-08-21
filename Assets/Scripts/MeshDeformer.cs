@@ -4,19 +4,33 @@ using System.Collections;
 
 public class MeshDeformer : MonoBehaviour
 {
-    private Mesh mesh;
-    private Vector3[] modifiedVertices;
     public float deformationStrength = 0.1f;
-    private MeshCollider meshCollider;
+
+    private Mesh mesh;
     private List<int> triangles;
+    private MeshCollider meshCollider;
+    private Vector3[] modifiedVertices;
+    private int[] verticesIndex = new int[6];
+    
 
     void Start()
     {
         mesh = GetComponent<MeshFilter>().mesh;
         meshCollider = GetComponent<MeshCollider>();
         triangles = new List<int>(mesh.triangles);
-
         modifiedVertices = mesh.vertices;
+
+        CalculateVerticesIndex();
+    }
+
+    private void CalculateVerticesIndex()
+    {
+        for(int i = 0; i < 6; i++)
+        {
+            int index = mesh.vertices.Length / 6 * (i + 1);
+            verticesIndex[i] = index;
+            Debug.Log(verticesIndex[i]);
+        }
     }
 
     void UpdateMesh()
@@ -30,27 +44,33 @@ public class MeshDeformer : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        DeformMesh(collision);
+        //DeformMesh(collision);
     }
 
     void DeformMesh(Collision collision)
     {
         foreach (ContactPoint contact in collision.contacts)
         {
-            DeformVertices(contact.point, collision.transform.position);
+            DeformVertices(contact.point);
+            //StartCoroutine(DeformVertices(contact.point));
         }
         UpdateMesh();
     }
 
-    private void DeformVertices(Vector3 contactPoint , Vector3 collisionPoint)
+    private void DeformVertices(Vector3 contactPoint)
     {
         for (int i = 0; i < modifiedVertices.Length; i++)
         {
-            if(i <= 2178 || (i >= 3268 && i <= 4356) || i >= 5446)
+            // if(i <= verticesIndex[1] || (i >= (verticesIndex[2] + 1) && i <= verticesIndex[3]) || i >= (verticesIndex[4] + 1))
+            // {
+            //     continue;
+            // }
+
+            if(i <= (verticesIndex[3]))
             {
                 continue;
             }
-            // 頂点を赤くする
+            //頂点を赤くする
             // Debug.DrawLine(transform.TransformPoint(modifiedVertices[i]), transform.TransformPoint(modifiedVertices[i]) + Vector3.up * 0.1f, Color.red);
             // Debug.Log(i);
             // yield return null;
@@ -59,9 +79,9 @@ public class MeshDeformer : MonoBehaviour
             Vector3 worldVertex = transform.TransformPoint(modifiedVertices[i]);
             // 頂点と衝突点の距離を計算
             float distance = Vector3.Distance(worldVertex, contactPoint);
-            float pointDistance = Vector3.Distance(worldVertex, collisionPoint);
+            //float pointDistance = Vector3.Distance(worldVertex, collisionPoint);
             // 衝突点からの距離に応じて頂点を変形
-            if (distance < deformationStrength && pointDistance < 0.6f)
+            if (distance < deformationStrength)
             {
                 Vector3 deformation = new Vector3(0, 0, 1f) * deformationStrength * (1 - distance / deformationStrength);
                 modifiedVertices[i] += transform.InverseTransformDirection(deformation);
@@ -72,7 +92,12 @@ public class MeshDeformer : MonoBehaviour
         // 三角形の削除操作
         for (int i = 0; i < triangles.Count; i += 3)
         {
-            if(triangles[i] <= 2178 || (triangles[i] >= 3268 && triangles[i] <= 4356) || triangles[i] >= 5446)
+            // if(triangles[i] <= 2178 || (triangles[i] >= 3268 && triangles[i] <= 4356) || triangles[i] >= 5446)
+            // {
+            //     continue;
+            // }
+
+            if(i <= (verticesIndex[3]))
             {
                 continue;
             }
