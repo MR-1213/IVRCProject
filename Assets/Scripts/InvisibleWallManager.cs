@@ -4,7 +4,8 @@ using UnityEngine;
 
 public class InvisibleWallManager : MonoBehaviour
 {
-    public int MeltWallNumber;
+    public string MeltWallNumber;
+    [SerializeField] private SerialManager _serialManager;
     public Transform player;
     private Vector2 _allowedMovePositionXY;
     private float[] _allowedMovePositionRangeZ = new float[2];
@@ -14,36 +15,37 @@ public class InvisibleWallManager : MonoBehaviour
     {
         // このオブジェクトのワールド座標を取得
         _allowedMovePositionRangeZ[0] = transform.position.z;
-        Debug.Log(_allowedMovePositionRangeZ[0]);
+        //Debug.Log(_allowedMovePositionRangeZ[0]);
         _allowedMovePositionRangeZ[1] = _allowedMovePositionRangeZ[0] + 48.0f;
-        Debug.Log(_allowedMovePositionRangeZ[1]);
+        //Debug.Log(_allowedMovePositionRangeZ[1]);
         _allowedMovePositionXY = new Vector2(transform.position.x, transform.position.y);
 
         //CheckMeltAllowed(1);
     }
 
-    private void Update() 
-    {
-        // マイコンからの信号を受信する方に変更
-        if(OVRInput.GetDown(OVRInput.Button.One))
-        {
-            // ここでMeltWallNumberをマイコンに送信？
-            CheckMeltAllowed(1);
-            Debug.Log("Melt Allowed");
-        }
+    // private void Update() 
+    // {
+    //     // マイコンからの信号を受信する方に変更
+    //     if(OVRInput.GetDown(OVRInput.Button.One))
+    //     {
+    //         // ここでMeltWallNumberをマイコンに送信？
+    //         CheckMeltAllowed(1);
+    //         Debug.Log("Melt Allowed");
+    //     }
         
-        if(OVRInput.GetUp(OVRInput.Button.One))
-        {
-            CheckMeltAllowed(0);
-            Debug.Log("Melt Not Allowed");
-        }
-    }
+    //     if(OVRInput.GetUp(OVRInput.Button.One))
+    //     {
+    //         CheckMeltAllowed(0);
+    //         Debug.Log("Melt Not Allowed");
+    //     }
+    // }
 
     public void CheckMeltAllowed(int signal)
     {
         if(signal == 1)
         {
             IsMeltAllowed = true;
+            //_serialManager.SetMeltWallNumber(MeltWallNumber);
             this.GetComponent<MeshRenderer>().enabled = false;
             StartCoroutine(InvisibleWallMove());
         }
