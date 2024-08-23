@@ -5,6 +5,7 @@ using System.Collections;
 public class MeshDeformer : MonoBehaviour
 {
     public float deformationStrength = 0.1f;
+    [SerializeField] private InvisibleWallManager _invisibleWallManager;
 
     private Mesh mesh;
     private List<int> triangles;
@@ -12,6 +13,7 @@ public class MeshDeformer : MonoBehaviour
     private Vector3[] modifiedVertices;
     private int[] verticesIndex = new int[6];
     
+    private bool _isMeltAllowed = true;
 
     void Start()
     {
@@ -29,7 +31,6 @@ public class MeshDeformer : MonoBehaviour
         {
             int index = mesh.vertices.Length / 6 * (i + 1);
             verticesIndex[i] = index;
-            Debug.Log(verticesIndex[i]);
         }
     }
 
@@ -42,9 +43,21 @@ public class MeshDeformer : MonoBehaviour
         meshCollider.sharedMesh = mesh; // 更新されたメッシュを再設定する
     }
 
-    void OnCollisionEnter(Collision collision)
+    private void Update() 
     {
-        //DeformMesh(collision);
+        if(this.transform.position.z + 12.0f < _invisibleWallManager.transform.position.z)
+        {
+            _isMeltAllowed = false;
+        }
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if(!_isMeltAllowed)
+        {
+            return;
+        }
+        DeformMesh(collision);
     }
 
     void DeformMesh(Collision collision)
@@ -61,10 +74,6 @@ public class MeshDeformer : MonoBehaviour
     {
         for (int i = 0; i < modifiedVertices.Length; i++)
         {
-            // if(i <= verticesIndex[1] || (i >= (verticesIndex[2] + 1) && i <= verticesIndex[3]) || i >= (verticesIndex[4] + 1))
-            // {
-            //     continue;
-            // }
 
             if(i <= (verticesIndex[3]))
             {
@@ -92,10 +101,6 @@ public class MeshDeformer : MonoBehaviour
         // 三角形の削除操作
         for (int i = 0; i < triangles.Count; i += 3)
         {
-            // if(triangles[i] <= 2178 || (triangles[i] >= 3268 && triangles[i] <= 4356) || triangles[i] >= 5446)
-            // {
-            //     continue;
-            // }
 
             if(i <= (verticesIndex[3]))
             {
