@@ -6,9 +6,10 @@ using System.Threading;
 public class SerialHandler : MonoBehaviour
 {
     public delegate void SerialDataReceivedEventHandler(string message);
-    public event SerialDataReceivedEventHandler OnDataReceived;
+    //public event SerialDataReceivedEventHandler OnDataReceived;
+    public event SerialDataReceivedEventHandler OnDataReceived = delegate { };
 
-    string portName = "COM3";//ここにはArduinoのポート番号を記入
+    public string portName = "COM3";//ここにはArduinoのポート番号を記入
     int baudRate = 9600;
 
     private SerialPort serialPort_;

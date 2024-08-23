@@ -9,7 +9,7 @@ public class SerialManager : MonoBehaviour
 
 
     //受信用変数
-    public int data;              //受信データのfloat型版変数
+    private int data;              //受信データのfloat型版変数
     string receive_data;            //受信した生データを入れる変数
 
     //送信用変数

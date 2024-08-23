@@ -4,8 +4,9 @@ using UnityEngine;
 
 public class InvisibleWallManager : MonoBehaviour
 {
-    public string MeltWallNumber;
-    [SerializeField] private SerialManager _serialManager;
+    public string BulbNum;
+    public string BulbNum0;
+    [SerializeField] private SerialManager_Bulb _serialManager;
     public Transform player;
     private Vector2 _allowedMovePositionXY;
     private float[] _allowedMovePositionRangeZ = new float[2];
@@ -45,13 +46,15 @@ public class InvisibleWallManager : MonoBehaviour
         if(signal == 1)
         {
             IsMeltAllowed = true;
-            //_serialManager.SetMeltWallNumber(MeltWallNumber);
+            _serialManager.SetMeltWallNumber(BulbNum);
             this.GetComponent<MeshRenderer>().enabled = false;
             StartCoroutine(InvisibleWallMove());
         }
         else if(signal == 0)
         {
             IsMeltAllowed = false;
+            _serialManager.SetMeltWallNumber(BulbNum0);
+            Debug.Log("バルブを閉じた");
         }
     }
 
