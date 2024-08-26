@@ -3,7 +3,22 @@ guid: def6d5575dadeb04190d041b74adb973
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Dial
+    second: {fileID: 2100000, guid: ae745cb0ec9b20247bb09c48e47b6608, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Gold
+    second: {fileID: 2100000, guid: 3608f5b67d55d8f4b8dfa6672a4e72dc, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Needle
+    second: {fileID: 2100000, guid: d9a7b6423afa52246a67966552b30001, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
