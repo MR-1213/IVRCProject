@@ -5,8 +5,8 @@ using UnityEngine.AI;
 
 public class NPCManager : MonoBehaviour
 {
-    [SerializeField] private Transform _minPoint;
-    [SerializeField] private Transform _maxPoint;
+    private Transform _minPoint;
+    private Transform _maxPoint;
     public float moveSpeed = 3.0f;
 
     private NavMeshAgent _navMeshAgent;
@@ -17,6 +17,10 @@ public class NPCManager : MonoBehaviour
         _navMeshAgent = GetComponent<NavMeshAgent>();
         _animator = GetComponent<Animator>();
         _navMeshAgent.speed = moveSpeed;
+
+        _minPoint = GameObject.Find("MinPoint").transform;
+        _maxPoint = GameObject.Find("MaxPoint").transform;
+
 
         _animator.SetInteger("legs", 5);
         StartCoroutine(MoveNPC());
