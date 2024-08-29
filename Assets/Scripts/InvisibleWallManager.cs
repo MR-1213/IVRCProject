@@ -20,26 +20,7 @@ public class InvisibleWallManager : MonoBehaviour
         _allowedMovePositionRangeZ[1] = _allowedMovePositionRangeZ[0] + 48.0f;
         //Debug.Log(_allowedMovePositionRangeZ[1]);
         _allowedMovePositionXY = new Vector2(transform.position.x, transform.position.y);
-
-        //CheckMeltAllowed(1);
     }
-
-    // private void Update() 
-    // {
-    //     // マイコンからの信号を受信する方に変更
-    //     if(OVRInput.GetDown(OVRInput.Button.One))
-    //     {
-    //         // ここでMeltWallNumberをマイコンに送信？
-    //         CheckMeltAllowed(1);
-    //         Debug.Log("Melt Allowed");
-    //     }
-        
-    //     if(OVRInput.GetUp(OVRInput.Button.One))
-    //     {
-    //         CheckMeltAllowed(0);
-    //         Debug.Log("Melt Not Allowed");
-    //     }
-    // }
 
     public void CheckMeltAllowed(int signal)
     {
