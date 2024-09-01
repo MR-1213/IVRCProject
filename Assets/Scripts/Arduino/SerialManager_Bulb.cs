@@ -17,13 +17,13 @@ public class SerialManager_Bulb : MonoBehaviour
     bool cansend = true;            //送信するかどうかを判断する変数
     
 
-    void Start()
+    private void Start()
     {
         serialHandler.OnDataReceived += OnDataReceived;
     }
 
     //データを受信したら
-    void OnDataReceived(string message)
+    private void OnDataReceived(string message)
     {
         receive_data = (message);           //受信データをreceive_dataに入れる
         data = int.Parse(receive_data);   //int型に変換してdataに入れる
@@ -33,33 +33,9 @@ public class SerialManager_Bulb : MonoBehaviour
         _invisibleWallManager.CheckMeltAllowed(data);
     }
 
-    // private void Update()
-    // {
-    //     if (onoff)
-    //     {
-    //         usendmsg();     //オン用メソッド呼び出し
-    //     }
-    //     else
-    //     {
-    //         dsendmsg();     //オフ用メソッド呼び出し
-    //     }
-    // }
-
     //どの壁を融かしているかを送信する
     public void SetMeltWallNumber(string number)
     {
-        serialHandler.Write(number);   //Arduinoに1を送信
-        //cansend = false;
+        serialHandler.Write(number);
     }
-
-    // //オフ用メソッド
-    // void dsendmsg()
-    // {
-    //     if (cansend == false)           //送信可能かチェック
-    //     {
-    //         serialHandler.Write("0");   //Arduinoに0を送信
-    //         Debug.Log("0を送信");
-    //         cansend = true;             //オフになるまで送信不可に設定
-    //     }
-    // }
 }

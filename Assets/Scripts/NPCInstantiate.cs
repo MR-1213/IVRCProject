@@ -5,9 +5,15 @@ using UnityEngine;
 public class NPCInstantiate : MonoBehaviour
 {
     [SerializeField] private GameObject _npcPrefab;
-    [SerializeField] private GameObject[] _npcMovePoints = new GameObject[3];
+    [SerializeField] private ChildArray[] _npcMovePoints;
+
+    [System.Serializable]
+    class ChildArray
+    {
+        public GameObject[] point;
+    }
     
-    public int NPCCount;
+    public int[] NPCCounts;
 
     private void Start()
     {
@@ -18,18 +24,34 @@ public class NPCInstantiate : MonoBehaviour
     {
         if(pointNum > 1)
         {
-            _npcMovePoints[pointNum - 2].SetActive(false);
+            // NPCManagerがGameObject.Findでmin,maxを取得するため、非アクティブにする
+            foreach(var point in _npcMovePoints[pointNum - 2].point)
+            {
+                point.SetActive(false);
+            }
         }
-        _npcMovePoints[pointNum - 1].SetActive(true);
-
-        Transform _minPoint = _npcMovePoints[pointNum - 1].transform.GetChild(0);
-        Transform _maxPoint = _npcMovePoints[pointNum - 1].transform.GetChild(1);
-        for(int i = 0; i < NPCCount; i++)
+        Transform _minPoint;
+        Transform _maxPoint;
+        for(int i = 0; i < _npcMovePoints[pointNum - 1].point.Length; i++)
         {
-            Instantiate(_npcPrefab, 
-                        new Vector3(Random.Range(_minPoint.position.x, _maxPoint.position.x), 0f, Random.Range(_minPoint.position.z, _maxPoint.position.z)), 
-                        Quaternion.identity, 
-                        this.transform);
+            var point = _npcMovePoints[pointNum - 1].point[i];
+            _minPoint = point.transform.GetChild(0);
+            _maxPoint = point.transform.GetChild(1);
+
+            for(int j = 0; j < NPCCounts[i]; j++)
+            {
+                var npc = Instantiate(_npcPrefab, 
+                            new Vector3(Random.Range(_minPoint.position.x, _maxPoint.position.x), 0f, Random.Range(_minPoint.position.z, _maxPoint.position.z)), 
+                            Quaternion.identity, 
+                            this.transform);
+
+                npc.GetComponent<NPCManager>().minPoint = _minPoint;
+                npc.GetComponent<NPCManager>().maxPoint = _maxPoint;
+            }
+            
+            
+            
         }
+        
     }
 }

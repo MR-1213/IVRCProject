@@ -5,8 +5,8 @@ using UnityEngine.AI;
 
 public class NPCManager : MonoBehaviour
 {
-    private Transform _minPoint;
-    private Transform _maxPoint;
+    public Transform minPoint;
+    public Transform maxPoint;
     public float moveSpeed = 3.0f;
 
     private NavMeshAgent _navMeshAgent;
@@ -18,19 +18,16 @@ public class NPCManager : MonoBehaviour
         _animator = GetComponent<Animator>();
         _navMeshAgent.speed = moveSpeed;
 
-        _minPoint = GameObject.Find("MinPoint").transform;
-        _maxPoint = GameObject.Find("MaxPoint").transform;
-
-
         _animator.SetInteger("legs", 5);
         StartCoroutine(MoveNPC());
     }
 
     private IEnumerator MoveNPC()
     {
+        yield return new WaitUntil(() => minPoint != null && maxPoint != null);
         while (true)
         {
-            Vector3 randomPosition = new Vector3(Random.Range(_minPoint.position.x, _maxPoint.position.x), 0, Random.Range(_minPoint.position.z, _maxPoint.position.z));
+            Vector3 randomPosition = new Vector3(Random.Range(minPoint.position.x, maxPoint.position.x), 0, Random.Range(minPoint.position.z, maxPoint.position.z));
 
             _navMeshAgent.SetDestination(randomPosition);
             _animator.SetInteger("legs", 1);
