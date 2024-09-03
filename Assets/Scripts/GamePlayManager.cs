@@ -34,15 +34,15 @@ public class GamePlayManager : MonoBehaviour
 
     private void Update() 
     {
-        Debug.Log("CenterEyeAnchor Rotation: " + _centerEyeAnchor.localEulerAngles.y);
-        if(_centerEyeAnchor.localEulerAngles.y > _centerEyeAnchorRotationThreshold + 100f || _centerEyeAnchor.localEulerAngles.y < 360f + _centerEyeAnchorRotationThreshold - 100f)
-        {
-            _screenFadeCanvas.SetActive(true);
-        }
-        else
-        {
-            _screenFadeCanvas.SetActive(false);
-        }
+        //Debug.Log("CenterEyeAnchor Rotation: " + _centerEyeAnchor.localEulerAngles.y);
+        //if(_centerEyeAnchor.localEulerAngles.y > _centerEyeAnchorRotationThreshold + 100f || _centerEyeAnchor.localEulerAngles.y < 360f + _centerEyeAnchorRotationThreshold - 100f)
+        //{
+        //    _screenFadeCanvas.SetActive(true);
+       // }
+        //else
+        //{
+        ////    _screenFadeCanvas.SetActive(false);
+        //}
     }
 
     private IEnumerator GoToMeltPoint1()

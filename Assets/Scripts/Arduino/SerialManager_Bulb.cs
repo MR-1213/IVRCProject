@@ -5,7 +5,6 @@ using UnityEngine;
 public class SerialManager_Bulb : MonoBehaviour
 {
     public SerialHandler_Bulb serialHandler;
-    public InvisibleWallManager _invisibleWallManager;
 
 
     //受信用変数
@@ -23,15 +22,14 @@ public class SerialManager_Bulb : MonoBehaviour
     }
 
     //データを受信したら
+    
     private void OnDataReceived(string message)
     {
         receive_data = (message);           //受信データをreceive_dataに入れる
         data = int.Parse(receive_data);   //int型に変換してdataに入れる
         Debug.Log("受信データ: " + data);
-
-        // マイコンからの信号を送る
-        _invisibleWallManager.CheckMeltAllowed(data);
     }
+    
 
     //どの壁を融かしているかを送信する
     public void SetMeltWallNumber(string number)

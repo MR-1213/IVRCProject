@@ -70,8 +70,10 @@ public class SerialHandler_Bulb : MonoBehaviour
         }
     }
 
+    
     private void Read()
     {
+        /*
         while (isRunning_ && serialPort_ != null && serialPort_.IsOpen)
         {
             try
@@ -85,7 +87,9 @@ public class SerialHandler_Bulb : MonoBehaviour
                 Debug.LogWarning("1:" + readline);
             }
         }
+        */
     }
+    
 
     public void Write(string message)
     {

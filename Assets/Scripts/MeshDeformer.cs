@@ -5,7 +5,7 @@ using System.Collections;
 public class MeshDeformer : MonoBehaviour
 {
     public float deformationStrength = 0.1f;
-    [SerializeField] private InvisibleWallManager _invisibleWallManager;
+    //[SerializeField] private InvisibleWallManager _invisibleWallManager;
 
     private Mesh mesh;
     private List<int> triangles;
@@ -43,6 +43,7 @@ public class MeshDeformer : MonoBehaviour
         meshCollider.sharedMesh = mesh; // 更新されたメッシュを再設定する
     }
 
+    /*
     private void Update() 
     {
         if(this.transform.position.z + 12.0f < _invisibleWallManager.transform.position.z)
@@ -50,13 +51,16 @@ public class MeshDeformer : MonoBehaviour
             _isMeltAllowed = false;
         }
     }
+    */
 
     private void OnCollisionEnter(Collision collision)
     {
+        /*
         if(!_isMeltAllowed)
         {
             return;
         }
+        */
         DeformMesh(collision);
     }
 

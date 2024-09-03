@@ -7,15 +7,24 @@ using TMPro;
 public class MeltMode : MonoBehaviour
 {
     [SerializeField] private OVRPlayerController _playerController;
+    [SerializeField] private SerialManager_Bulb _serialManager_Bulb;
+    [SerializeField] private SerialManager_Stepping _serialManager_Stepping;
+    [SerializeField] private SerialManager_RoadCell _serialManager_RoadCell;
     [SerializeField] private GameObject _cameraUICanvas;
     [SerializeField] private GameObject _invisibleWall;
-    [SerializeField] private GameObject _invisbleWall2;
 
     [SerializeField][Range(0f, 1f)] private float _meltability;
-    private float[] meltDistance = new float[4] {56f, 56f, 56f, 56f};
+    public bool IsHeightChange = false;
+    public float HeightChangeValue = 0f;
+
+
+    public float meltDistance = 56f;
     private float _meltedDistance;
 
+    private float _initialHeight;
+
     private Coroutine _waitCoroutine;
+    private Coroutine _excecuteCoroutine;
     private Transform _currentMeltPoint;
     private TMP_Text _cameraUIText;
 
@@ -46,11 +55,31 @@ public class MeltMode : MonoBehaviour
 
     public void MeltEnd(Collider collider)
     {
-        if(collider.gameObject.CompareTag("Player"))
+        if(collider.gameObject.CompareTag("Player") && _excecuteCoroutine != null)
         {
-            _invisbleWall2.GetComponent<BoxCollider>().enabled = true;
+            collider.enabled = false;
+            _playerController.transform.position = new Vector3(_playerController.transform.position.x, _initialHeight + HeightChangeValue, _playerController.transform.position.z + 3f);
+            _playerController.gameObject.GetComponent<CharacterController>().enabled = true;
             _playerController.enabled = true;
+
+            StopCoroutine(_excecuteCoroutine);
+
+            StartCoroutine(SteppingReverse());
+
+            _serialManager_RoadCell.NextMeltMode();
+
+
         }
+    }
+
+    private IEnumerator SteppingReverse()
+    {
+        yield return null;
+        _serialManager_Stepping.SetSyringeState("-1");
+        Debug.Log("-1を送りました");
+         yield return new WaitForSeconds(10f);
+        _serialManager_Stepping.SetSyringeState("0");
+        Debug.Log("0を送りました");
     }
 
     private IEnumerator WaitForStartMeltMode()
@@ -60,7 +89,7 @@ public class MeltMode : MonoBehaviour
             if(OVRInput.GetDown(OVRInput.Button.Three))
             {
                 Debug.Log("融かし始める");
-                StartCoroutine(MeltModeExcecute());
+                _excecuteCoroutine = StartCoroutine(MeltModeExcecute());
                 yield break;
             }
 
@@ -71,34 +100,72 @@ public class MeltMode : MonoBehaviour
     private IEnumerator MeltModeExcecute()
     {
         _playerController.enabled = false;
-        _playerController.transform.position = new Vector3(_currentMeltPoint.position.x, 4f, _currentMeltPoint.position.z);
+        _playerController.transform.position = new Vector3(_currentMeltPoint.position.x, _playerController.transform.position.y, _currentMeltPoint.position.z);
+        _initialHeight = _playerController.transform.position.y;
+
         float meltTime = 0f;
+        float steppingTime = 0f;
         while (true)
         {
-            if(OVRInput.GetDown(OVRInput.Button.Four))
+            Power = 0;
+            yield return null;
+
+            steppingTime += Time.deltaTime;
+            if(steppingTime > 2f)
             {
-                var value = Random.Range(10, 100);
-                Power = value;
+                steppingTime = 0f;
+            }
+
+            if (Power >= 10 && Power < 300)
+            {
+                //var value = Random.Range(10, 100);
+                //Power = value;
                 _invisibleWall.GetComponent<MeshRenderer>().enabled = false;
                 _invisibleWall.GetComponent<BoxCollider>().enabled = false;
-                while(true)
+
+                // バルブを開ける
+                _serialManager_Bulb.SetMeltWallNumber("2");
+                _serialManager_Stepping.SetSyringeState("1");
+
+                while (true)
                 {
-                    if(OVRInput.GetUp(OVRInput.Button.Four))
+                    if(Power > 300)
                     {
+                        yield return null;
+                        continue;
+                    }
+
+                    if(Power < 1)
+                    {
+                        _serialManager_Bulb.SetMeltWallNumber("0");
+                        _serialManager_Stepping.SetSyringeState("0");
                         meltTime = 0f;
+                        yield return null;
                         break;
                     }
 
                     meltTime += Time.deltaTime;
                     float progressSpeed = CalcProgressSpeed(meltTime);
-                    Debug.Log("進行速度: " + progressSpeed);
+                    //Debug.Log("進行速度: " + progressSpeed);
 
-                    var nextPos = new Vector3(_playerController.transform.position.x, _playerController.transform.position.y, _playerController.transform.position.z + progressSpeed);
                     // 今どれくらいの距離が融けているかを計算
                     _meltedDistance += progressSpeed;
                     // 残りの距離を計算
-                    var remainingDistance = meltDistance[0] - _meltedDistance;
-                    Debug.Log("残りの距離: " + remainingDistance);
+                    var remainingDistance = meltDistance - _meltedDistance;
+
+                    float height;
+                    if (IsHeightChange)
+                    {
+                        height = Mathf.Lerp(0f, HeightChangeValue, _meltedDistance / meltDistance);
+                    }
+                    else
+                    {
+                        height = 0f;
+                    }
+
+                    var nextPos = new Vector3(_playerController.transform.position.x, _initialHeight + height, _playerController.transform.position.z + progressSpeed);
+                    
+                    //Debug.Log("残りの距離: " + remainingDistance);
                     _playerController.transform.position = nextPos;
 
                     yield return null;
@@ -109,7 +176,7 @@ public class MeltMode : MonoBehaviour
                 meltTime = 0f;
             }
 
-            yield return null;
+            //yield return null;
         }
     }
 
@@ -117,10 +184,10 @@ public class MeltMode : MonoBehaviour
     {
         // 抵抗力0 ~ 1の範囲(0:強い, 1:弱い)
         float resistancePower = 1f - Mathf.Pow(1f - _meltability, meltTime);
-        float progressSpeed = (Power / 2000f) * resistancePower;
+        float progressSpeed = (Power / 1000f) * resistancePower;
 
         return progressSpeed;
     }
 
-    public int Power { private get; set; }
+    public int Power { private get; set; } = 0;
 }

@@ -41,6 +41,7 @@ public class SerialHandler_RoadCell : MonoBehaviour
         _serialPort.Open();
 
         _serialPort.ReadTimeout = 20;
+        _serialPort.NewLine = "\n";
 
         _isRunning = true;
 
@@ -68,6 +69,7 @@ public class SerialHandler_RoadCell : MonoBehaviour
 
     private void Read()
     {
+        
         while (_isRunning && _serialPort != null && _serialPort.IsOpen)
         {
             try
@@ -81,6 +83,7 @@ public class SerialHandler_RoadCell : MonoBehaviour
                 Debug.LogWarning("1:" + readline);
             }
         }
+        
     }
 
     public void Write(string message)
