@@ -6,6 +6,7 @@ using TMPro;
 
 public class MeltMode : MonoBehaviour
 {
+    [SerializeField] private GamePlayManager _gamePlayManager;
     [SerializeField] private OVRPlayerController _playerController;
     [SerializeField] private SerialManager_Bulb _serialManager_Bulb;
     [SerializeField] private SerialManager_Stepping _serialManager_Stepping;
@@ -59,16 +60,16 @@ public class MeltMode : MonoBehaviour
         {
             collider.enabled = false;
             _playerController.transform.position = new Vector3(_playerController.transform.position.x, _initialHeight + HeightChangeValue, _playerController.transform.position.z + 3f);
+            StopCoroutine(_excecuteCoroutine);
+            StartCoroutine(SteppingReverse());
+
+            StartCoroutine(_gamePlayManager.GoToMeltPoint2());
+
+            
             _playerController.gameObject.GetComponent<CharacterController>().enabled = true;
             _playerController.enabled = true;
 
-            StopCoroutine(_excecuteCoroutine);
-
-            StartCoroutine(SteppingReverse());
-
             _serialManager_RoadCell.NextMeltMode();
-
-
         }
     }
 
@@ -81,6 +82,8 @@ public class MeltMode : MonoBehaviour
         _serialManager_Stepping.SetSyringeState("0");
         Debug.Log("0を送りました");
     }
+
+    
 
     private IEnumerator WaitForStartMeltMode()
     {
