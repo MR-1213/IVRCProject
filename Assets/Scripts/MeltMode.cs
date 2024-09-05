@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 using TMPro;
+using UnityEngine.Formats.Alembic.Importer;
+using UnityEditor;
 
 public class MeltMode : MonoBehaviour
 {
@@ -13,6 +15,9 @@ public class MeltMode : MonoBehaviour
     [SerializeField] private SerialManager_RoadCell _serialManager_RoadCell;
     [SerializeField] private GameObject _cameraUICanvas;
     [SerializeField] private GameObject _invisibleWall;
+
+    [SerializeField] private GameObject _meltWall;
+    private AlembicStreamPlayer _alembicPlayer;
 
     [SerializeField][Range(0f, 1f)] private float _meltability;
     public bool IsHeightChange = false;
@@ -32,6 +37,9 @@ public class MeltMode : MonoBehaviour
     private void Start()
     {
         _cameraUIText = _cameraUICanvas.transform.GetChild(0).GetComponent<TMP_Text>();
+        _alembicPlayer = _meltWall.GetComponent<AlembicStreamPlayer>();
+        _alembicPlayer.CurrentTime = 0f;
+
     }
 
     public void UICanvasEnable(Collider collider)
@@ -63,7 +71,7 @@ public class MeltMode : MonoBehaviour
             StopCoroutine(_excecuteCoroutine);
             StartCoroutine(SteppingReverse());
 
-            StartCoroutine(_gamePlayManager.GoToMeltPoint2());
+            //StartCoroutine(_gamePlayManager.GoToMeltPoint2());
 
             
             _playerController.gameObject.GetComponent<CharacterController>().enabled = true;
@@ -107,23 +115,15 @@ public class MeltMode : MonoBehaviour
         _initialHeight = _playerController.transform.position.y;
 
         float meltTime = 0f;
-        float steppingTime = 0f;
+        float meltingRatio = 0.01666f;
         while (true)
         {
             Power = 0;
             yield return null;
 
-            steppingTime += Time.deltaTime;
-            if(steppingTime > 2f)
-            {
-                steppingTime = 0f;
-            }
-
             if (Power >= 10 && Power < 300)
             {
-                //var value = Random.Range(10, 100);
-                //Power = value;
-                _invisibleWall.GetComponent<MeshRenderer>().enabled = false;
+                //_invisibleWall.GetComponent<MeshRenderer>().enabled = false;
                 _invisibleWall.GetComponent<BoxCollider>().enabled = false;
 
                 // バルブを開ける
@@ -149,27 +149,41 @@ public class MeltMode : MonoBehaviour
 
                     meltTime += Time.deltaTime;
                     float progressSpeed = CalcProgressSpeed(meltTime);
-                    //Debug.Log("進行速度: " + progressSpeed);
+
+                    float speedX, speedZ;
+                    if(_meltWall.gameObject.name == "melt3_3" || _meltWall.gameObject.name == "melt3_4")
+                    {
+                        speedX = progressSpeed;
+                        speedZ = 0f;
+                    }
+                    else
+                    {
+                        speedX = 0f;
+                        speedZ = progressSpeed;
+                    }
 
                     // 今どれくらいの距離が融けているかを計算
                     _meltedDistance += progressSpeed;
-                    // 残りの距離を計算
-                    var remainingDistance = meltDistance - _meltedDistance;
 
                     float height;
                     if (IsHeightChange)
                     {
-                        height = Mathf.Lerp(0f, HeightChangeValue, _meltedDistance / meltDistance);
+                        height = HeightChangeValue;
                     }
                     else
                     {
                         height = 0f;
                     }
 
-                    var nextPos = new Vector3(_playerController.transform.position.x, _initialHeight + height, _playerController.transform.position.z + progressSpeed);
-                    
-                    //Debug.Log("残りの距離: " + remainingDistance);
+                    var nextPos = new Vector3(_playerController.transform.position.x + speedX, _initialHeight + height, _playerController.transform.position.z + speedZ);
                     _playerController.transform.position = nextPos;
+
+                    float currentTime= Mathf.Lerp(0.01666f, 10f, (_meltedDistance + 3.5f) / meltDistance);
+                    if(currentTime >= 10f)
+                    {
+                        currentTime = 10f;
+                    }
+                    _alembicPlayer.CurrentTime = currentTime;
 
                     yield return null;
                 }
