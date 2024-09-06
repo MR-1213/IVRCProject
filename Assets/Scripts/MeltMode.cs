@@ -9,10 +9,11 @@ using UnityEditor;
 public class MeltMode : MonoBehaviour
 {
     [SerializeField] private GamePlayManager _gamePlayManager;
-    [SerializeField] private OVRPlayerController _playerController;
+    [SerializeField] private PlayerMovementController _playerController;
     [SerializeField] private SerialManager_Bulb _serialManager_Bulb;
     [SerializeField] private SerialManager_Stepping _serialManager_Stepping;
     [SerializeField] private SerialManager_RoadCell _serialManager_RoadCell;
+    [SerializeField] private NPCInstantiate _npcInstantiate;
     [SerializeField] private GameObject _cameraUICanvas;
     [SerializeField] private GameObject _invisibleWall;
 
@@ -20,6 +21,8 @@ public class MeltMode : MonoBehaviour
     private AlembicStreamPlayer _alembicPlayer;
 
     [SerializeField][Range(0f, 1f)] private float _meltability;
+    public float endStepForwardX = 0f;
+    public float endStepForwardZ = 0f;
     public bool IsHeightChange = false;
     public float HeightChangeValue = 0f;
 
@@ -66,15 +69,14 @@ public class MeltMode : MonoBehaviour
     {
         if(collider.gameObject.CompareTag("Player") && _excecuteCoroutine != null)
         {
-            collider.enabled = false;
-            _playerController.transform.position = new Vector3(_playerController.transform.position.x, _initialHeight + HeightChangeValue, _playerController.transform.position.z + 3f);
+            _playerController.transform.position = new Vector3(_playerController.transform.position.x - endStepForwardX, _initialHeight + HeightChangeValue, _playerController.transform.position.z + endStepForwardZ);
             StopCoroutine(_excecuteCoroutine);
             StartCoroutine(SteppingReverse());
 
             //StartCoroutine(_gamePlayManager.GoToMeltPoint2());
 
             
-            _playerController.gameObject.GetComponent<CharacterController>().enabled = true;
+            //_playerController.gameObject.GetComponent<CharacterController>().enabled = true;
             _playerController.enabled = true;
 
             _serialManager_RoadCell.NextMeltMode();
@@ -101,10 +103,27 @@ public class MeltMode : MonoBehaviour
             {
                 Debug.Log("融かし始める");
                 _excecuteCoroutine = StartCoroutine(MeltModeExcecute());
+                _npcInstantiate.SetNPCNextPoint(GetNPCNextPointIndex());
                 yield break;
             }
 
             yield return null;
+        }
+    }
+
+    private int GetNPCNextPointIndex()
+    {
+        if(_meltWall.gameObject.name == "melt3_1")
+        {
+            return 2;
+        }
+        else if(_meltWall.gameObject.name == "melt3_2")
+        {
+            return 3;
+        }
+        else if(_meltWall.gameObject.name == "melt3_3")
+        {
+            return 4;
         }
     }
 
@@ -119,11 +138,13 @@ public class MeltMode : MonoBehaviour
         while (true)
         {
             Power = 0;
+            //Debug.Log("受信した圧力値: " + Power);
             yield return null;
 
-            if (Power >= 10 && Power < 300)
+            if(OVRInput.GetDown(OVRInput.Button.Four))
+            //if (Power >= 10 && Power < 300)
             {
-                //_invisibleWall.GetComponent<MeshRenderer>().enabled = false;
+                Power = 100;
                 _invisibleWall.GetComponent<BoxCollider>().enabled = false;
 
                 // バルブを開ける
@@ -138,7 +159,8 @@ public class MeltMode : MonoBehaviour
                         continue;
                     }
 
-                    if(Power < 1)
+                    if(OVRInput.GetUp(OVRInput.Button.Four))
+                    //if(Power < 1)
                     {
                         _serialManager_Bulb.SetMeltWallNumber("0");
                         _serialManager_Stepping.SetSyringeState("0");
@@ -151,19 +173,25 @@ public class MeltMode : MonoBehaviour
                     float progressSpeed = CalcProgressSpeed(meltTime);
 
                     float speedX, speedZ;
-                    if(_meltWall.gameObject.name == "melt3_3" || _meltWall.gameObject.name == "melt3_4")
+                    if(_meltWall.gameObject.name == "melt3_3")
                     {
                         speedX = progressSpeed;
                         speedZ = 0f;
+                        _meltedDistance += speedX;
                     }
-                    else
+                    else if(_meltWall.gameObject.name == "melt3_4")
+                    {
+                        speedX = progressSpeed;
+                        speedZ = progressSpeed + 0.027f;
+                        _meltedDistance += Mathf.Sqrt(Mathf.Pow(speedX, 2) + Mathf.Pow(speedZ, 2));
+                    }
+                    else 
                     {
                         speedX = 0f;
                         speedZ = progressSpeed;
+                        _meltedDistance += speedZ;
                     }
-
-                    // 今どれくらいの距離が融けているかを計算
-                    _meltedDistance += progressSpeed;
+                    
 
                     float height;
                     if (IsHeightChange)
@@ -175,7 +203,7 @@ public class MeltMode : MonoBehaviour
                         height = 0f;
                     }
 
-                    var nextPos = new Vector3(_playerController.transform.position.x + speedX, _initialHeight + height, _playerController.transform.position.z + speedZ);
+                    var nextPos = new Vector3(_playerController.transform.position.x - speedX, _initialHeight + height, _playerController.transform.position.z + speedZ);
                     _playerController.transform.position = nextPos;
 
                     float currentTime= Mathf.Lerp(0.01666f, 10f, (_meltedDistance + 3.5f) / meltDistance);

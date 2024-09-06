@@ -1,0 +1,43 @@
+using System.Collections;
+using System.Collections.Generic;
+using Unity.VisualScripting;
+using UnityEngine;
+
+public class PlayerMovementController : MonoBehaviour
+{
+    public float speed = 3.0f;
+    public int angle = 30;
+
+    private void Start()
+    {
+        var trackingPos = this.transform.GetChild(0).localPosition;
+        this.transform.GetChild(0).localPosition = new Vector3(trackingPos.x, trackingPos.y - 1.5f, trackingPos.z);
+    }
+
+    private void Update()
+    {
+        ChangeDirection();
+        Move();
+    }
+
+    //OVRCameraRigの角度変更
+    void ChangeDirection()
+    {
+        if (OVRInput.GetDown(OVRInput.RawButton.LThumbstickLeft))
+        {
+            this.transform.Rotate(0,-angle, 0);
+        }
+        else if (OVRInput.GetDown(OVRInput.RawButton.LThumbstickRight))
+        {
+            this.transform.Rotate(0, angle, 0);
+        }
+    }
+
+    void Move()
+    {
+        //右ジョイスティックの情報取得
+        Vector2 stickL = OVRInput.Get(OVRInput.RawAxis2D.RThumbstick);
+        //OVRCameraRigの位置変更
+        this.transform.position += this.transform.rotation * (new Vector3((stickL.x * speed), 0, (stickL.y * speed)));
+    }
+}

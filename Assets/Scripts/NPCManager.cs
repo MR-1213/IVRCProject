@@ -42,5 +42,10 @@ public class NPCManager : MonoBehaviour
             
         }
     }
+
+    private void OnDestroy()
+    {
+        StopAllCoroutines();
+    }
     
 }
