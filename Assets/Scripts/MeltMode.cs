@@ -19,6 +19,7 @@ public class MeltMode : MonoBehaviour
 
     [SerializeField] private GameObject _meltWall;
     private AlembicStreamPlayer _alembicPlayer;
+    private Material _meltWallMaterial;
 
     [SerializeField][Range(0f, 1f)] private float _meltability;
     public float endStepForwardX = 0f;
@@ -42,7 +43,9 @@ public class MeltMode : MonoBehaviour
         _cameraUIText = _cameraUICanvas.transform.GetChild(0).GetComponent<TMP_Text>();
         _alembicPlayer = _meltWall.GetComponent<AlembicStreamPlayer>();
         _alembicPlayer.CurrentTime = 0f;
-
+        _meltWallMaterial = _meltWall.GetComponentInChildren<MeshRenderer>().material;
+        //_meltWallMaterial.SetFloat("_Heat", 3000f);
+        //_meltWallMaterial.SetFloat("_Current", 0.2f);
     }
 
     public void UICanvasEnable(Collider collider)
@@ -125,7 +128,11 @@ public class MeltMode : MonoBehaviour
         {
             return 4;
         }
-        return default;
+        else
+        {
+            Debug.LogError("値がおかしい");
+            return 4;
+        }
     }
 
     private IEnumerator MeltModeExcecute()
@@ -135,7 +142,6 @@ public class MeltMode : MonoBehaviour
         _initialHeight = _playerController.transform.position.y;
 
         float meltTime = 0f;
-        float meltingRatio = 0.01666f;
         while (true)
         {
             Power = 0;
@@ -213,6 +219,19 @@ public class MeltMode : MonoBehaviour
                         currentTime = 10f;
                     }
                     _alembicPlayer.CurrentTime = currentTime;
+                    _meltWallMaterial.SetFloat("_Current", currentTime / 10f);
+                    if(currentTime / 10f < (1f / 15f))
+                    {
+                        // 0~1/15, 0~3000
+                        float heatValue = (3000f * 15f) * (currentTime / 10f);
+                        Debug.Log(heatValue);
+                        _meltWallMaterial.SetFloat("_Heat", heatValue);
+                    }
+                    else
+                    {
+                        _meltWallMaterial.SetFloat("_Heat", 3000f);
+                    }
+                    
 
                     yield return null;
                 }
