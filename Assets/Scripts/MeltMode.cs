@@ -125,6 +125,7 @@ public class MeltMode : MonoBehaviour
         {
             return 4;
         }
+        return default;
     }
 
     private IEnumerator MeltModeExcecute()
