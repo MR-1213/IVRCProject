@@ -32,9 +32,11 @@ public class NPCInstantiate : MonoBehaviour
         {
             foreach(Transform npc in this.GetComponentInChildren<Transform>())
             {
+                if(npc.gameObject.transform == this.transform) continue;
                 Destroy(npc.gameObject);
             }
         }
+        
         Transform _minPoint;
         Transform _maxPoint;
         for(int i = 0; i < _npcMovePoints[pointNum - 1].point.Length; i++)

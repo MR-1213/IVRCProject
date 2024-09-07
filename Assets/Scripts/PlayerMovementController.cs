@@ -36,8 +36,8 @@ public class PlayerMovementController : MonoBehaviour
     void Move()
     {
         //右ジョイスティックの情報取得
-        Vector2 stickL = OVRInput.Get(OVRInput.RawAxis2D.RThumbstick);
+        Vector2 stickL = OVRInput.Get(OVRInput.RawAxis2D.LThumbstick);
         //OVRCameraRigの位置変更
-        this.transform.position += this.transform.rotation * (new Vector3((stickL.x * speed), 0, (stickL.y * speed)));
+        this.transform.position += this.transform.rotation * (new Vector3(0f, 0f, (stickL.y * speed)));
     }
 }

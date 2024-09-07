@@ -24,7 +24,9 @@ public class NPCManager : MonoBehaviour
 
     private IEnumerator MoveNPC()
     {
+        //Debug.Log("minPoint: " + minPoint);
         yield return new WaitUntil(() => minPoint != null && maxPoint != null);
+        //Debug.Log("minPoint: " + minPoint);
         while (true)
         {
             Vector3 randomPosition = new Vector3(Random.Range(minPoint.position.x, maxPoint.position.x), 0, Random.Range(minPoint.position.z, maxPoint.position.z));
