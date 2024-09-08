@@ -37,6 +37,7 @@ public class MeltMode : MonoBehaviour
     private Coroutine _excecuteCoroutine;
     private Transform _currentMeltPoint;
     private TMP_Text _cameraUIText;
+    private readonly object _lock = new object();
 
     private void Start()
     {
@@ -106,7 +107,7 @@ public class MeltMode : MonoBehaviour
             {
                 Debug.Log("融かし始める");
                 _excecuteCoroutine = StartCoroutine(MeltModeExcecute());
-                _npcInstantiate.SetNPCNextPoint(GetNPCNextPointIndex());
+                //_npcInstantiate.SetNPCNextPoint(GetNPCNextPointIndex());
                 yield break;
             }
 
@@ -254,5 +255,23 @@ public class MeltMode : MonoBehaviour
         return progressSpeed;
     }
 
-    public int Power { private get; set; } = 0;
+    private int _power;
+    public int Power
+    {
+        private get
+        {
+            lock (_lock)
+            {
+                return _power;
+            }
+
+        }
+        set
+        {
+            lock (_lock)
+            {
+                _power = value;
+            }
+        }
+    }
 }
