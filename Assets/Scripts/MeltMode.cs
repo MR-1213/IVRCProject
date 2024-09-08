@@ -53,7 +53,7 @@ public class MeltMode : MonoBehaviour
     {
         if(collider.gameObject.CompareTag("Player"))
         {
-            _cameraUIText.text = "Xボタン(左コントローラー)を押して\n壁を融かし始めよう!";
+            _cameraUIText.text = "トリガーボタンを押して\n壁を融かし始めよう!";
             _cameraUICanvas.SetActive(true);
             _currentMeltPoint = collider.transform;
             _waitCoroutine = StartCoroutine(WaitForStartMeltMode());
@@ -103,9 +103,10 @@ public class MeltMode : MonoBehaviour
     {
         while(true)
         {
-            if(OVRInput.GetDown(OVRInput.Button.Three))
+            if(OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger))
             {
                 Debug.Log("融かし始める");
+                _cameraUIText.text = "壁を押して融かせ！";
                 _excecuteCoroutine = StartCoroutine(MeltModeExcecute());
                 //_npcInstantiate.SetNPCNextPoint(GetNPCNextPointIndex());
                 yield break;
@@ -149,11 +150,13 @@ public class MeltMode : MonoBehaviour
             //Debug.Log("受信した圧力値: " + Power);
             yield return null;
 
-            if(OVRInput.GetDown(OVRInput.Button.Four))
+            if(OVRInput.GetDown(OVRInput.Button.PrimaryHandTrigger))
             //if (Power >= 10 && Power < 300)
             {
                 Power = 100;
+                _cameraUICanvas.SetActive(false);
                 _invisibleWall.GetComponent<BoxCollider>().enabled = false;
+                _gamePlayManager.MeltBGMPlay();
 
                 // バルブを開ける
                 _serialManager_Bulb.SetMeltWallNumber("2");
@@ -167,11 +170,12 @@ public class MeltMode : MonoBehaviour
                         continue;
                     }
 
-                    if(OVRInput.GetUp(OVRInput.Button.Four))
+                    if(OVRInput.GetUp(OVRInput.Button.PrimaryHandTrigger))
                     //if(Power < 1)
                     {
                         _serialManager_Bulb.SetMeltWallNumber("0");
                         _serialManager_Stepping.SetSyringeState("0");
+                        _gamePlayManager.BGMStop();
                         meltTime = 0f;
                         yield return null;
                         break;
@@ -190,7 +194,7 @@ public class MeltMode : MonoBehaviour
                     else if(_meltWall.gameObject.name == "melt3_4")
                     {
                         speedX = progressSpeed;
-                        speedZ = progressSpeed + 0.027f;
+                        speedZ = progressSpeed + 1.66f;
                         _meltedDistance += Mathf.Sqrt(Mathf.Pow(speedX, 2) + Mathf.Pow(speedZ, 2));
                     }
                     else 

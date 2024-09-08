@@ -10,6 +10,8 @@ public class GamePlayManager : MonoBehaviour
     [SerializeField] private AudioSource _SEAudioSource;
     public AudioClip SEAudioClip;
     [SerializeField] private AudioSource _BGMAudioSource;
+    public AudioClip StationBGM;
+    public AudioClip MeltBGM;
 
     private TMP_Text _cameraUIText;
     private Transform _centerEyeAnchor;
@@ -32,6 +34,12 @@ public class GamePlayManager : MonoBehaviour
     };
     [SerializeField] private GameObject[] _aonamiStations;
 
+    private string[] _gameEndingTexts = 
+    {
+        "おめでとうございます！\nあなたは無事にあおなみ線の改札口まで到着しました！\n【トリガーボタンで次へ】",
+        "体験いただきありがとうございました。\nヘッドセットを外してください。\n【トリガーボタンで閉じる】",
+    };
+
     private void Start()
     {
         _cameraUICanvas.SetActive(true);
@@ -41,29 +49,44 @@ public class GamePlayManager : MonoBehaviour
 
         _centerEyeAnchor = _screenFadeCanvas.transform.parent;
         _centerEyeAnchorRotationThreshold = _centerEyeAnchor.localEulerAngles.y;
+        Debug.Log("CenterEyeAnchor Threshold: " + _centerEyeAnchorRotationThreshold);
 
         StartCoroutine(GoToMeltPoint1());
     }
 
     private void Update() 
     {
-        //Debug.Log("CenterEyeAnchor Rotation: " + _centerEyeAnchor.localEulerAngles.y);
-        //if(_centerEyeAnchor.localEulerAngles.y > _centerEyeAnchorRotationThreshold + 100f || _centerEyeAnchor.localEulerAngles.y < 360f + _centerEyeAnchorRotationThreshold - 100f)
-        //{
-        //    _screenFadeCanvas.SetActive(true);
-       // }
-        //else
-        //{
-        ////    _screenFadeCanvas.SetActive(false);
-        //}
+        Debug.Log("CenterEyeAnchor Rotation: " + _centerEyeAnchor.localEulerAngles.y);
+        if(_centerEyeAnchor.localEulerAngles.y > 100f && _centerEyeAnchor.localEulerAngles.y < 260f)
+        {
+            _screenFadeCanvas.SetActive(true);
+        }
+        else
+        {
+            _screenFadeCanvas.SetActive(false);
+        }
     }
 
     public void StationBGMPlay(Collider collider)
     {
         if(collider.gameObject.CompareTag("Player"))
         {
+            _BGMAudioSource.Stop();
+            _BGMAudioSource.clip = StationBGM;
             _BGMAudioSource.Play();
         }
+    }
+
+    public void MeltBGMPlay()
+    {
+        _BGMAudioSource.Stop();
+        _BGMAudioSource.clip = MeltBGM;
+        _BGMAudioSource.Play();
+    }
+
+    public void BGMStop()
+    {
+        _BGMAudioSource.Stop();
     }
 
     private IEnumerator GoToMeltPoint1()
@@ -71,7 +94,7 @@ public class GamePlayManager : MonoBehaviour
         int textIndex = 1;
         while(true)
         {
-            // Xボタンで会話ダイアログを進める
+            // 会話ダイアログを進める
             if(OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger))
             {
                 if(textIndex >= _gameExplanationTexts_1.Length)
@@ -111,7 +134,7 @@ public class GamePlayManager : MonoBehaviour
         textIndex++;
         while(true)
         {
-            // Xボタンで会話ダイアログを進める
+            // 会話ダイアログを進める
             if(OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger))
             {
                 if(textIndex >= _gameExplanationTexts_2.Length)
@@ -127,12 +150,36 @@ public class GamePlayManager : MonoBehaviour
                         obj.layer = LayerMask.NameToLayer("WallHack");
                     }
                 }
-                else
+
+                _cameraUIText.text = _gameExplanationTexts_2[textIndex];
+                _SEAudioSource.PlayOneShot(SEAudioClip);
+                textIndex++;
+            }
+
+            yield return null;
+        }
+    }
+
+    public void GameEnding()
+    {
+        StartCoroutine(GameEndingCoroutine());
+    }
+
+    private IEnumerator GameEndingCoroutine()
+    {
+        int textIndex = 0;
+        _cameraUICanvas.SetActive(true);
+        _cameraUIText.text = _gameEndingTexts[textIndex];
+
+        while(true)
+        {
+            //会話ダイアログを進める
+            if(OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger))
+            {
+                if(textIndex >= _gameExplanationTexts_2.Length)
                 {
-                    foreach(GameObject obj in _aonamiStations)
-                    {
-                        obj.layer = LayerMask.NameToLayer("Default");
-                    }
+                    _cameraUICanvas.SetActive(false);
+                    yield break;
                 }
 
                 _cameraUIText.text = _gameExplanationTexts_2[textIndex];

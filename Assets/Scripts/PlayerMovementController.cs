@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class PlayerMovementController : MonoBehaviour
 {
+    [SerializeField] private Transform _mainCamera;
     public float speed = 3.0f;
     public int angle = 30;
 
@@ -12,6 +13,7 @@ public class PlayerMovementController : MonoBehaviour
     {
         var trackingPos = this.transform.GetChild(0).localPosition;
         this.transform.GetChild(0).localPosition = new Vector3(trackingPos.x, trackingPos.y - 1.5f, trackingPos.z);
+        _mainCamera = Camera.main.transform;
     }
 
     private void Update()
@@ -38,6 +40,6 @@ public class PlayerMovementController : MonoBehaviour
         //右ジョイスティックの情報取得
         Vector2 stickL = OVRInput.Get(OVRInput.RawAxis2D.LThumbstick);
         //OVRCameraRigの位置変更
-        this.transform.position += this.transform.rotation * (new Vector3(0f, 0f, (stickL.y * speed)));
+        this.transform.position += _mainCamera.rotation * (new Vector3(0f, 0f, (stickL.y * speed)));
     }
 }
