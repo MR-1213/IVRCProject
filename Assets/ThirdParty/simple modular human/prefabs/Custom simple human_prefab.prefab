@@ -7109,4 +7109,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   minPoint: {fileID: 0}
   maxPoint: {fileID: 0}
+  npcHeight: 0
   moveSpeed: 3

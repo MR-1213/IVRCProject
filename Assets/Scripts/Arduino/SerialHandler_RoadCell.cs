@@ -40,8 +40,7 @@ public class SerialHandler_RoadCell : MonoBehaviour
         _serialPort = new SerialPort(portName, baudRate, Parity.None, 8, StopBits.One);
         _serialPort.Open();
 
-        _serialPort.ReadTimeout = 20;
-        _serialPort.NewLine = "\n";
+        _serialPort.ReadTimeout = 350;
 
         _isRunning = true;
 
@@ -51,7 +50,7 @@ public class SerialHandler_RoadCell : MonoBehaviour
 
     private void Close()
     {
-        Write("0"); //！！！今回のコードではこの行がないと実行終了時にLEDが消えないので注意！！！
+        //Write("0"); //！！！今回のコードではこの行がないと実行終了時にLEDが消えないので注意！！！
         _isNewMessageReceived = false;
         _isRunning = false;
 

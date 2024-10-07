@@ -5,6 +5,9 @@ using UnityEngine.UIElements;
 using TMPro;
 using UnityEngine.Formats.Alembic.Importer;
 using UnityEditor;
+using DG.Tweening;
+using NUnit.Framework.Internal;
+using UnityEngine.Rendering.Universal.Internal;
 
 public class MeltMode : MonoBehaviour
 {
@@ -13,10 +16,14 @@ public class MeltMode : MonoBehaviour
     [SerializeField] private SerialManager_Bulb _serialManager_Bulb;
     [SerializeField] private SerialManager_Stepping _serialManager_Stepping;
     [SerializeField] private SerialManager_RoadCell _serialManager_RoadCell;
-    [SerializeField] private NPCInstantiate _npcInstantiate;
+    [SerializeField] private ParticleSystem _particleSystem;
     [SerializeField] private GameObject _cameraUICanvas;
     [SerializeField] private GameObject _invisibleWall;
 
+    [SerializeField] private Transform _mainCamera;
+    [SerializeField] private SkinnedMeshRenderer _rightHand;
+    [SerializeField] private Material _lavaMaterial;
+    [SerializeField] private Material _normalMaterial;
     [SerializeField] private GameObject _meltWall;
     private AlembicStreamPlayer _alembicPlayer;
     private Material _meltWallMaterial;
@@ -29,14 +36,22 @@ public class MeltMode : MonoBehaviour
 
 
     public float meltDistance = 56f;
+    public float reverseTime = 10f;
+
+    public bool IsMeltByController;
     private float _meltedDistance;
 
     private float _initialHeight;
 
+    private Rigidbody _playerRigidbody;
     private Coroutine _waitCoroutine;
     private Coroutine _excecuteCoroutine;
     private Transform _currentMeltPoint;
     private TMP_Text _cameraUIText;
+
+    private Transform _startPoint;
+    public Transform _endPoint;
+
     private readonly object _lock = new object();
 
     private void Start()
@@ -45,15 +60,27 @@ public class MeltMode : MonoBehaviour
         _alembicPlayer = _meltWall.GetComponent<AlembicStreamPlayer>();
         _alembicPlayer.CurrentTime = 0f;
         _meltWallMaterial = _meltWall.GetComponentInChildren<MeshRenderer>().material;
-        //_meltWallMaterial.SetFloat("_Heat", 3000f);
-        //_meltWallMaterial.SetFloat("_Current", 0.2f);
+        _playerRigidbody = _playerController.GetComponent<Rigidbody>();
+        //StartCoroutine(Test());
+    }
+
+    private IEnumerator Test()
+    {
+        _serialManager_Stepping.SetSyringeState("1");
+        yield return new WaitForSeconds(10f);
+        _serialManager_Stepping.SetSyringeState("0");
     }
 
     public void UICanvasEnable(Collider collider)
     {
+        // if(_startPoint == null)
+        // {
+        //     _startPoint = collider.gameObject.transform;
+        // }
         if(collider.gameObject.CompareTag("Player"))
         {
-            _cameraUIText.text = "トリガーボタンを押して\n壁を融かし始めよう!";
+            _cameraUIText.color = Color.white;
+            _cameraUIText.text = "壁と対面し、トリガーボタンを押して\n壁を融かし始めよう!";
             _cameraUICanvas.SetActive(true);
             _currentMeltPoint = collider.transform;
             _waitCoroutine = StartCoroutine(WaitForStartMeltMode());
@@ -73,18 +100,25 @@ public class MeltMode : MonoBehaviour
     {
         if(collider.gameObject.CompareTag("Player") && _excecuteCoroutine != null)
         {
+            Power = 0;
+            StartCoroutine(MeltComplete(_meltWallMaterial.GetFloat("_Current"), _alembicPlayer.CurrentTime));
             _playerController.transform.position = new Vector3(_playerController.transform.position.x - endStepForwardX, _initialHeight + HeightChangeValue, _playerController.transform.position.z + endStepForwardZ);
+            _playerRigidbody.useGravity = true;
+            //_rightHand.material = _normalMaterial;
             StopCoroutine(_excecuteCoroutine);
             StartCoroutine(SteppingReverse());
 
-            //StartCoroutine(_gamePlayManager.GoToMeltPoint2());
-
-            
-            //_playerController.gameObject.GetComponent<CharacterController>().enabled = true;
             _playerController.enabled = true;
 
             _serialManager_RoadCell.NextMeltMode();
         }
+    }
+
+    private IEnumerator MeltComplete(float M_StartValue, float ABC_StartValue)
+    {
+        Sequence sequence = DOTween.Sequence();
+        sequence.Append(DOVirtual.Float(M_StartValue, 1f, 2.0f, value => _meltWallMaterial.SetFloat("_Current", value))).Join(DOVirtual.Float(ABC_StartValue, 10f, 2.0f, value => _alembicPlayer.CurrentTime = value));
+        yield return sequence.Play().WaitForCompletion();
     }
 
     private IEnumerator SteppingReverse()
@@ -92,9 +126,10 @@ public class MeltMode : MonoBehaviour
         yield return null;
         _serialManager_Stepping.SetSyringeState("-1");
         Debug.Log("-1を送りました");
-         yield return new WaitForSeconds(10f);
+        yield return new WaitForSeconds(reverseTime);
         _serialManager_Stepping.SetSyringeState("0");
         Debug.Log("0を送りました");
+        Power = 0;
     }
 
     
@@ -106,34 +141,18 @@ public class MeltMode : MonoBehaviour
             if(OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger))
             {
                 Debug.Log("融かし始める");
+                _playerRigidbody.useGravity = false;
+                // var direction = _endPoint.position - _startPoint.position;
+                // Vector3 angle = _mainCamera.localEulerAngles;
+                // angle.y = direction.y;
+                // _mainCamera.localEulerAngles = angle;
+                //_rightHand.sharedMaterial = _lavaMaterial;
                 _cameraUIText.text = "壁を押して融かせ！";
                 _excecuteCoroutine = StartCoroutine(MeltModeExcecute());
-                //_npcInstantiate.SetNPCNextPoint(GetNPCNextPointIndex());
                 yield break;
             }
 
             yield return null;
-        }
-    }
-
-    private int GetNPCNextPointIndex()
-    {
-        if(_meltWall.gameObject.name == "melt3_1")
-        {
-            return 2;
-        }
-        else if(_meltWall.gameObject.name == "melt3_2")
-        {
-            return 3;
-        }
-        else if(_meltWall.gameObject.name == "melt3_3")
-        {
-            return 4;
-        }
-        else
-        {
-            Debug.LogError("値がおかしい");
-            return 4;
         }
     }
 
@@ -144,15 +163,18 @@ public class MeltMode : MonoBehaviour
         _initialHeight = _playerController.transform.position.y;
 
         float meltTime = 0f;
+        Power = 0;
         while (true)
         {
-            Power = 0;
+            
             //Debug.Log("受信した圧力値: " + Power);
-            yield return null;
+            //yield return null;
 
-            if(OVRInput.GetDown(OVRInput.Button.PrimaryHandTrigger))
-            //if (Power >= 10 && Power < 300)
+            //if(OVRInput.GetDown(OVRInput.Button.PrimaryHandTrigger))
+            if ((Power >= 3 && Power < 1000))
             {
+                Debug.Log($"入った！！{Power}");
+                //_particleSystem.Play();   
                 Power = 100;
                 _cameraUICanvas.SetActive(false);
                 _invisibleWall.GetComponent<BoxCollider>().enabled = false;
@@ -164,7 +186,7 @@ public class MeltMode : MonoBehaviour
 
                 while (true)
                 {
-                    if(Power > 300)
+                    if(Power > 1000)
                     {
                         yield return null;
                         continue;
@@ -173,6 +195,7 @@ public class MeltMode : MonoBehaviour
                     if(OVRInput.GetUp(OVRInput.Button.PrimaryHandTrigger))
                     //if(Power < 1)
                     {
+                        //_particleSystem.Stop();
                         _serialManager_Bulb.SetMeltWallNumber("0");
                         _serialManager_Stepping.SetSyringeState("0");
                         _gamePlayManager.BGMStop();
@@ -194,7 +217,7 @@ public class MeltMode : MonoBehaviour
                     else if(_meltWall.gameObject.name == "melt3_4")
                     {
                         speedX = progressSpeed;
-                        speedZ = progressSpeed + 1.66f;
+                        speedZ = progressSpeed * 1.66f;
                         _meltedDistance += Mathf.Sqrt(Mathf.Pow(speedX, 2) + Mathf.Pow(speedZ, 2));
                     }
                     else 
@@ -218,7 +241,7 @@ public class MeltMode : MonoBehaviour
                     var nextPos = new Vector3(_playerController.transform.position.x - speedX, _initialHeight + height, _playerController.transform.position.z + speedZ);
                     _playerController.transform.position = nextPos;
 
-                    float currentTime= Mathf.Lerp(0.01666f, 10f, (_meltedDistance + 3.5f) / meltDistance);
+                    float currentTime= Mathf.Lerp(0.01666f, 10f, (_meltedDistance + 4.0f) / meltDistance);
                     if(currentTime >= 10f)
                     {
                         currentTime = 10f;
@@ -229,7 +252,7 @@ public class MeltMode : MonoBehaviour
                     {
                         // 0~1/15, 0~3000
                         float heatValue = (3000f * 15f) * (currentTime / 10f);
-                        Debug.Log(heatValue);
+                        //Debug.Log(heatValue);
                         _meltWallMaterial.SetFloat("_Heat", heatValue);
                     }
                     else
@@ -246,7 +269,7 @@ public class MeltMode : MonoBehaviour
                 meltTime = 0f;
             }
 
-            //yield return null;
+            yield return null;
         }
     }
 
@@ -254,7 +277,7 @@ public class MeltMode : MonoBehaviour
     {
         // 抵抗力0 ~ 1の範囲(0:強い, 1:弱い)
         float resistancePower = 1f - Mathf.Pow(1f - _meltability, meltTime);
-        float progressSpeed = (Power / 1000f) * resistancePower;
+        float progressSpeed = (Power / 2000f) * resistancePower;
 
         return progressSpeed;
     }
@@ -266,6 +289,7 @@ public class MeltMode : MonoBehaviour
         {
             lock (_lock)
             {
+                //Debug.Log("Get: " + _power);
                 return _power;
             }
 
@@ -274,6 +298,7 @@ public class MeltMode : MonoBehaviour
         {
             lock (_lock)
             {
+                Debug.Log("Set: " + value);
                 _power = value;
             }
         }

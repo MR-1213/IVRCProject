@@ -5,6 +5,7 @@ using TMPro;
 
 public class GamePlayManager : MonoBehaviour
 {
+    [SerializeField] private PlayerMovementController _playerController;
     [SerializeField] private GameObject _cameraUICanvas;
     [SerializeField] private GameObject _screenFadeCanvas;
     [SerializeField] private AudioSource _SEAudioSource;
@@ -30,14 +31,14 @@ public class GamePlayManager : MonoBehaviour
     private string[] _gameExplanationTexts_2 = 
     {
         "素晴らしいです！この調子であおなみ線を目指しましょう！\n【トリガーボタンで次へ】",
-        "あおなみ線は左奥の緑色に光っている場所です！\n赤色の目印の壁を融かして進んでいきましょう！\n【トリガーボタンで閉じる】",
+        "あおなみ線は左奥の<color=green>緑色</color>に光っている場所です！\n赤色の目印の壁を融かして進んでいきましょう！\n【トリガーボタンで閉じる】",
     };
     [SerializeField] private GameObject[] _aonamiStations;
 
     private string[] _gameEndingTexts = 
     {
         "おめでとうございます！\nあなたは無事にあおなみ線の改札口まで到着しました！\n【トリガーボタンで次へ】",
-        "体験いただきありがとうございました。\nヘッドセットを外してください。\n【トリガーボタンで閉じる】",
+        "体験いただきありがとうございました。\nヘッドセットを外してください。",
     };
 
     private void Start()
@@ -56,15 +57,15 @@ public class GamePlayManager : MonoBehaviour
 
     private void Update() 
     {
-        Debug.Log("CenterEyeAnchor Rotation: " + _centerEyeAnchor.localEulerAngles.y);
-        if(_centerEyeAnchor.localEulerAngles.y > 100f && _centerEyeAnchor.localEulerAngles.y < 260f)
-        {
-            _screenFadeCanvas.SetActive(true);
-        }
-        else
-        {
-            _screenFadeCanvas.SetActive(false);
-        }
+        //Debug.Log("CenterEyeAnchor Rotation: " + _centerEyeAnchor.localEulerAngles.y);
+        // if(_centerEyeAnchor.localEulerAngles.y > 100f && _centerEyeAnchor.localEulerAngles.y < 260f)
+        // {
+        //     _screenFadeCanvas.SetActive(true);
+        // }
+        // else
+        // {
+        //     _screenFadeCanvas.SetActive(false);
+        // }
     }
 
     public void StationBGMPlay(Collider collider)
@@ -92,6 +93,7 @@ public class GamePlayManager : MonoBehaviour
     private IEnumerator GoToMeltPoint1()
     {
         int textIndex = 1;
+        _cameraUIText.color = Color.black;
         while(true)
         {
             // 会話ダイアログを進める
@@ -130,6 +132,7 @@ public class GamePlayManager : MonoBehaviour
     {
         int textIndex = 0;
         _cameraUICanvas.SetActive(true);
+        _cameraUIText.color = Color.black;
         _cameraUIText.text = _gameExplanationTexts_2[textIndex];
         textIndex++;
         while(true)
@@ -169,6 +172,7 @@ public class GamePlayManager : MonoBehaviour
     {
         int textIndex = 0;
         _cameraUICanvas.SetActive(true);
+        _cameraUIText.color = Color.black;
         _cameraUIText.text = _gameEndingTexts[textIndex];
 
         while(true)
@@ -176,13 +180,13 @@ public class GamePlayManager : MonoBehaviour
             //会話ダイアログを進める
             if(OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger))
             {
-                if(textIndex >= _gameExplanationTexts_2.Length)
+                if(textIndex >= _gameEndingTexts.Length)
                 {
-                    _cameraUICanvas.SetActive(false);
+                    //_cameraUICanvas.SetActive(false);
                     yield break;
                 }
 
-                _cameraUIText.text = _gameExplanationTexts_2[textIndex];
+                _cameraUIText.text = _gameEndingTexts[textIndex];
                 _SEAudioSource.PlayOneShot(SEAudioClip);
                 textIndex++;
             }

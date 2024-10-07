@@ -5,6 +5,7 @@ using UnityEngine;
 public class NPCInstantiate : MonoBehaviour
 {
     [SerializeField] private GameObject _npcPrefab;
+    [SerializeField] private GameObject _wall;
     [SerializeField] private PointArray[] _npcMovePoints;
 
     [System.Serializable]
@@ -19,6 +20,14 @@ public class NPCInstantiate : MonoBehaviour
     class CountArray
     {
         public int[] count;
+    }
+
+    [SerializeField] private HeightArray[] _npcHeight;
+
+    [System.Serializable]
+    class HeightArray
+    {
+        public float[] height;
     }
 
     private void Start()
@@ -36,6 +45,11 @@ public class NPCInstantiate : MonoBehaviour
                 Destroy(npc.gameObject);
             }
         }
+
+        if(pointNum == 3)
+        {
+            _wall.SetActive(false);
+        }
         
         Transform _minPoint;
         Transform _maxPoint;
@@ -48,12 +62,14 @@ public class NPCInstantiate : MonoBehaviour
             for(int j = 0; j < _npcCounts[pointNum - 1].count[i]; j++)
             {
                 var npc = Instantiate(_npcPrefab, 
-                            new Vector3(Random.Range(_minPoint.position.x, _maxPoint.position.x), 0f, Random.Range(_minPoint.position.z, _maxPoint.position.z)), 
+                            new Vector3(Random.Range(_minPoint.position.x, _maxPoint.position.x), _npcHeight[pointNum - 1].height[i], Random.Range(_minPoint.position.z, _maxPoint.position.z)), 
                             Quaternion.identity, 
                             this.transform);
-
-                npc.GetComponent<NPCManager>().minPoint = _minPoint;
-                npc.GetComponent<NPCManager>().maxPoint = _maxPoint;
+                
+                var manager = npc.GetComponent<NPCManager>();
+                manager.minPoint = _minPoint;
+                manager.maxPoint = _maxPoint;
+                manager.npcHeight = _npcHeight[pointNum - 1].height[i];
             }
         
             

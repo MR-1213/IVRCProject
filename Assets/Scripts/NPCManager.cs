@@ -7,6 +7,7 @@ public class NPCManager : MonoBehaviour
 {
     public Transform minPoint;
     public Transform maxPoint;
+    public float npcHeight;
     public float moveSpeed = 3.0f;
 
     private NavMeshAgent _navMeshAgent;
@@ -29,17 +30,15 @@ public class NPCManager : MonoBehaviour
         //Debug.Log("minPoint: " + minPoint);
         while (true)
         {
-            Vector3 randomPosition = new Vector3(Random.Range(minPoint.position.x, maxPoint.position.x), 0, Random.Range(minPoint.position.z, maxPoint.position.z));
+            Vector3 randomPosition = new Vector3(Random.Range(minPoint.position.x, maxPoint.position.x), npcHeight, Random.Range(minPoint.position.z, maxPoint.position.z));
 
             _navMeshAgent.SetDestination(randomPosition);
             _animator.SetInteger("legs", 1);
             _animator.SetInteger("arms", 1);
-            //Debug.Log("Moving to " + randomPosition);
             yield return new WaitUntil(() => (_navMeshAgent.remainingDistance < 0.1f && !_navMeshAgent.pathPending));
 
             _animator.SetInteger("legs", 5);
             _animator.SetInteger("arms", 5);
-            //Debug.Log("Reached destination");
             yield return new WaitForSeconds(5.0f);
             
         }
