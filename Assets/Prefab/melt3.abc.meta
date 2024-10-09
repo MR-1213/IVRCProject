@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 1ec6d5de671af3d45a987c1312eac688
+guid: 1095cd019d3e08749afde6a90b88b781
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -8,8 +8,8 @@ ScriptedImporter:
   assetBundleName: 
   assetBundleVariant: 
   script: {fileID: 11500000, guid: f53f5fc499d31e44b9deee84d28a9ee8, type: 3}
-  rootGameObjectId: 
-  rootGameObjectName: 
+  rootGameObjectId: melt3
+  rootGameObjectName: melt3
   importerVersion: 1
   streamSettings:
     normals: 1
