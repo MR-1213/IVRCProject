@@ -170,8 +170,8 @@ public class MeltMode : MonoBehaviour
             //Debug.Log("受信した圧力値: " + Power);
             //yield return null;
 
-            //if(OVRInput.GetDown(OVRInput.Button.PrimaryHandTrigger))
-            if ((Power >= 3 && Power < 1000))
+            if(OVRInput.GetDown(OVRInput.Button.PrimaryHandTrigger))
+            //if ((Power >= 3 && Power < 1000))
             {
                 Debug.Log($"入った！！{Power}");
                 //_particleSystem.Play();   
