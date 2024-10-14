@@ -64,12 +64,12 @@ public class MeltMode : MonoBehaviour
         //StartCoroutine(Test());
     }
 
-    private IEnumerator Test()
-    {
-        _serialManager_Stepping.SetSyringeState("1");
-        yield return new WaitForSeconds(10f);
-        _serialManager_Stepping.SetSyringeState("0");
-    }
+    // private IEnumerator Test()
+    // {
+    //     _serialManager_Stepping.SetSyringeState("1");
+    //     yield return new WaitForSeconds(10f);
+    //     _serialManager_Stepping.SetSyringeState("0");
+    // }
 
     public void UICanvasEnable(Collider collider)
     {
@@ -79,6 +79,7 @@ public class MeltMode : MonoBehaviour
         // }
         if(collider.gameObject.CompareTag("Player"))
         {
+            _gamePlayManager.IsCanceled = true;
             _cameraUIText.color = Color.white;
             _cameraUIText.text = "壁と対面し、トリガーボタンを押して\n壁を融かし始めよう!";
             _cameraUICanvas.SetActive(true);
@@ -91,6 +92,7 @@ public class MeltMode : MonoBehaviour
     {
         if(collider.gameObject.CompareTag("Player") && _waitCoroutine != null)
         {
+            _gamePlayManager.IsCanceled = false;
             _cameraUICanvas.SetActive(false);
             StopCoroutine(_waitCoroutine);
         }

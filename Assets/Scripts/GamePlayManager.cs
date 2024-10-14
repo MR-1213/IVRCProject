@@ -17,6 +17,7 @@ public class GamePlayManager : MonoBehaviour
     private TMP_Text _cameraUIText;
     private Transform _centerEyeAnchor;
     private float _centerEyeAnchorRotationThreshold;
+    public bool IsCanceled { get; set; }
 
     private string[] _gameExplanationTexts_1 =
     {
@@ -96,6 +97,10 @@ public class GamePlayManager : MonoBehaviour
         _cameraUIText.color = Color.black;
         while(true)
         {
+            if(IsCanceled)
+            {
+                yield break;
+            }
             // 会話ダイアログを進める
             if(OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger))
             {
@@ -137,6 +142,10 @@ public class GamePlayManager : MonoBehaviour
         textIndex++;
         while(true)
         {
+            if(IsCanceled)
+            {
+                yield break;
+            }
             // 会話ダイアログを進める
             if(OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger))
             {
