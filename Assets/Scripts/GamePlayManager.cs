@@ -5,78 +5,163 @@ using TMPro;
 
 public class GamePlayManager : MonoBehaviour
 {
-    [SerializeField] private PlayerMovementController _playerController;
-    [SerializeField] private GameObject _cameraUICanvas;
-    [SerializeField] private GameObject _screenFadeCanvas;
-    [SerializeField] private AudioSource _SEAudioSource;
-    public AudioClip SEAudioClip;
-    [SerializeField] private AudioSource _BGMAudioSource;
+    // 管理下スクリプト
+    [SerializeField] private ScenarioEventManager _scenarioEventManager;
+    [SerializeField] private WallAnchorManager _wallAnchorManager;
+    [SerializeField] private NPCInstantiate _npcInstantiate;
+
+    // BGM関連
+    [SerializeField] 
+    private AudioSource _BGMAudioSource;
     public AudioClip StationBGM;
     public AudioClip MeltBGM;
 
-    private TMP_Text _cameraUIText;
-    private Transform _centerEyeAnchor;
-    private float _centerEyeAnchorRotationThreshold;
-    public bool IsCanceled { get; set; }
+    private int pointNum = 1;
 
-    private string[] _gameExplanationTexts_1 =
-    {
-        "ここは名古屋駅桜通口付近です。\nそしてあなたは大事な会議に遅刻しそうです...！\n【トリガーボタンで次へ】",
-        "向かうべきはあおなみ線の改札口です。\nしかし、ここからは遠く、多くの人で混雑する名古屋駅では間に合うか分かりません...\n【トリガーボタンで次へ】",
-        "ここはあなたの持つものを融かす能力を使って、あおなみ線までの近道を作ってしまいましょう！\n【トリガーボタンで次へ】",
-        "まずは名古屋駅構内に入り、<color=red>赤色</color>の目印まで向かいましょう！\n【トリガーボタンで次へ】",
-        "『移動方法』左スティックで移動・回転ができます。メニューボタンは押さないように注意してください！\n【トリガーボタンで閉じる】",
-    };
-    [SerializeField] private GameObject _redMarker;
-
-    private string[] _gameExplanationTexts_2 = 
-    {
-        "素晴らしいです！この調子であおなみ線を目指しましょう！\n【トリガーボタンで次へ】",
-        "あおなみ線は左奥の<color=green>緑色</color>に光っている場所です！\n赤色の目印の壁を融かして進んでいきましょう！\n【トリガーボタンで閉じる】",
-    };
-    [SerializeField] private GameObject[] _aonamiStations;
-
-    private string[] _gameEndingTexts = 
-    {
-        "おめでとうございます！\nあなたは無事にあおなみ線の改札口まで到着しました！\n【トリガーボタンで次へ】",
-        "体験いただきありがとうございました。\nヘッドセットを外してください。",
-    };
+    private bool _isScenarioEventCompleted = false;
 
     private void Start()
     {
-        _cameraUICanvas.SetActive(true);
-        _cameraUIText = _cameraUICanvas.transform.GetChild(0).GetComponent<TMP_Text>();
-        _cameraUIText.text = _gameExplanationTexts_1[0];
-        _cameraUIText.fontSize = 9;
-
-        _centerEyeAnchor = _screenFadeCanvas.transform.parent;
-        _centerEyeAnchorRotationThreshold = _centerEyeAnchor.localEulerAngles.y;
-        Debug.Log("CenterEyeAnchor Threshold: " + _centerEyeAnchorRotationThreshold);
-
-        StartCoroutine(GoToMeltPoint1());
+        _isScenarioEventCompleted = false;
+        _scenarioEventManager.StartIntroduction(ScenarioEventCompleted);
     }
 
-    private void Update() 
+    #region シナリオイベント関連
+    // シナリオイベントのコールバック
+    private void ScenarioEventCompleted()
     {
-        //Debug.Log("CenterEyeAnchor Rotation: " + _centerEyeAnchor.localEulerAngles.y);
-        // if(_centerEyeAnchor.localEulerAngles.y > 100f && _centerEyeAnchor.localEulerAngles.y < 260f)
-        // {
-        //     _screenFadeCanvas.SetActive(true);
-        // }
-        // else
-        // {
-        //     _screenFadeCanvas.SetActive(false);
-        // }
+        Debug.Log("シナリオイベント完了");
+        _isScenarioEventCompleted = true;
     }
 
-    public void StationBGMPlay(Collider collider)
+    public void CancelScenarioEvent()
     {
-        if(collider.gameObject.CompareTag("Player"))
+        // シナリオイベントが完了していない場合はその時点で終了
+        if(!_isScenarioEventCompleted)
         {
-            _BGMAudioSource.Stop();
-            _BGMAudioSource.clip = StationBGM;
-            _BGMAudioSource.Play();
+            _scenarioEventManager.CancelScenarioEvent();
+            _isScenarioEventCompleted = true;
         }
+    }
+
+    /// <summary>
+    /// 駅構内入口の透明コライダーから呼ばれるイベント
+    /// シナリオイベントを中断し、駅構内BGMを再生する
+    /// </summary>
+    /// <param name="collider"></param>
+    public void EnterStation(Collider collider)
+    {
+        if(!collider.gameObject.CompareTag("Player"))
+        {
+            return;
+        }
+
+        CancelScenarioEvent();
+
+        StationBGMPlay();
+    }
+    
+    /// <summary>
+    /// 最終目的地を表示し、チュートリアルを完了する
+    /// </summary>
+    public void TutorialComplete()
+    {
+        _isScenarioEventCompleted = false;
+        _scenarioEventManager.StartTutorialCompleted();
+    }
+
+    /// <summary>
+    /// ゲームを終了する
+    /// </summary>
+    public void GameEnding()
+    {
+        _isScenarioEventCompleted = false;
+        _scenarioEventManager.StartGameCompleted();
+    }
+    #endregion
+
+    #region 融かすモード関連
+
+    /// <summary>
+    /// 融かすポイントの赤色目印に入った時のイベント
+    /// 
+    /// </summary>
+    /// <param name="collider"></param>
+    public void EnterMeltMode(Collider collider)
+    {
+        var _meltMode = collider.transform.parent.GetComponent<MeltMode>();
+        _meltMode.CurrentMeltPoint = collider.transform;
+        _meltMode.ChangeMeltModeState(MeltMode.MeltModeStateEnum.WaitForMelting);
+
+        _scenarioEventManager.StartMeltModeMessage();
+
+        _wallAnchorManager.AnchorsVisibility();
+    }
+
+    /// <summary>
+    /// 融かすポイントの赤色目印から出た時のイベント
+    /// UIメッセージを非表示にする
+    /// </summary>
+    public void ExitMeltMode(Collider collider)
+    {
+        _scenarioEventManager.CancelScenarioEvent();
+        Debug.Log(collider.gameObject.name);
+        var _meltMode = collider.transform.parent.GetComponent<MeltMode>();
+        if(_meltMode.MeltModeState == MeltMode.MeltModeStateEnum.MeltExcecute)
+        {
+            return;
+        }
+
+        _wallAnchorManager.AnchorsInvisibility();
+    }
+
+    /// <summary>
+    /// 融かしきった時のイベント
+    /// </summary>
+    /// <param name="collider"></param>
+    public void MeltEndEnter(Collider collider)
+    {
+        _wallAnchorManager.AnchorsInvisibility();
+
+        var _meltMode = collider.transform.parent.GetComponent<MeltMode>();
+        if(_meltMode.MeltModeState == MeltMode.MeltModeStateEnum.Idle)
+        {
+            return;
+        }
+        
+        _meltMode.ChangeMeltModeState(MeltMode.MeltModeStateEnum.MeltEnd);
+    }
+
+    /// <summary>
+    /// 融かしきった後、融かしポイントから出た時のイベント
+    /// </summary>
+    /// <param name="collider"></param>
+    public void MeltEndExit(Collider collider)
+    {
+        var _meltMode = collider.transform.parent.GetComponent<MeltMode>();
+        if(_meltMode.MeltModeState == MeltMode.MeltModeStateEnum.Idle)
+        {
+            return;
+        }
+
+        _meltMode.ChangeMeltModeState(MeltMode.MeltModeStateEnum.Idle);
+        StationBGMPlay();
+        _npcInstantiate.SetNPCNextPoint(pointNum);
+    }
+
+    public void SetNPCNextPointNum(int pointNum)
+    {
+        this.pointNum = pointNum;
+    }
+
+    #endregion
+
+    #region BGM関連
+    public void StationBGMPlay()
+    {
+        _BGMAudioSource.Stop();
+        _BGMAudioSource.clip = StationBGM;
+        _BGMAudioSource.Play();
     }
 
     public void MeltBGMPlay()
@@ -90,117 +175,5 @@ public class GamePlayManager : MonoBehaviour
     {
         _BGMAudioSource.Stop();
     }
-
-    private IEnumerator GoToMeltPoint1()
-    {
-        int textIndex = 1;
-        _cameraUIText.color = Color.black;
-        while(true)
-        {
-            if(IsCanceled)
-            {
-                yield break;
-            }
-            // 会話ダイアログを進める
-            if(OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger))
-            {
-                if(textIndex >= _gameExplanationTexts_1.Length)
-                {
-                    _cameraUICanvas.SetActive(false);
-                    yield break;
-                }
-
-                if(_gameExplanationTexts_1[textIndex].Contains("赤色"))
-                {
-                    _redMarker.SetActive(true);
-                }
-                else
-                {
-                    _redMarker.SetActive(false);
-                }
-
-                _cameraUIText.text = _gameExplanationTexts_1[textIndex];
-                _SEAudioSource.PlayOneShot(SEAudioClip);
-                textIndex++;
-            }
-
-            yield return null;
-        }
-    }
-
-    public void GoToMeltPoint2()
-    {
-        StartCoroutine(GoToMeltPoint2Coroutine());
-    }
-
-    private IEnumerator GoToMeltPoint2Coroutine()
-    {
-        int textIndex = 0;
-        _cameraUICanvas.SetActive(true);
-        _cameraUIText.color = Color.black;
-        _cameraUIText.text = _gameExplanationTexts_2[textIndex];
-        textIndex++;
-        while(true)
-        {
-            if(IsCanceled)
-            {
-                yield break;
-            }
-            // 会話ダイアログを進める
-            if(OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger))
-            {
-                if(textIndex >= _gameExplanationTexts_2.Length)
-                {
-                    _cameraUICanvas.SetActive(false);
-                    yield break;
-                }
-
-                if(_gameExplanationTexts_2[textIndex].Contains("緑色"))
-                {
-                    foreach(GameObject obj in _aonamiStations)
-                    {
-                        obj.layer = LayerMask.NameToLayer("WallHack");
-                    }
-                }
-
-                _cameraUIText.text = _gameExplanationTexts_2[textIndex];
-                _SEAudioSource.PlayOneShot(SEAudioClip);
-                textIndex++;
-            }
-
-            yield return null;
-        }
-    }
-
-    public void GameEnding()
-    {
-        StartCoroutine(GameEndingCoroutine());
-    }
-
-    private IEnumerator GameEndingCoroutine()
-    {
-        int textIndex = 0;
-        _cameraUICanvas.SetActive(true);
-        _cameraUIText.color = Color.black;
-        _cameraUIText.text = _gameEndingTexts[textIndex];
-
-        while(true)
-        {
-            //会話ダイアログを進める
-            if(OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger))
-            {
-                if(textIndex >= _gameEndingTexts.Length)
-                {
-                    //_cameraUICanvas.SetActive(false);
-                    yield break;
-                }
-
-                _cameraUIText.text = _gameEndingTexts[textIndex];
-                _SEAudioSource.PlayOneShot(SEAudioClip);
-                textIndex++;
-            }
-
-            yield return null;
-        }
-    }
+    #endregion
 }

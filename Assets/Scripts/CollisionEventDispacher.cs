@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -8,7 +9,8 @@ public class ColliderEvent : UnityEvent<Collider> { }
 
 public class CollisionEventDispacher : MonoBehaviour
 {
-
+    [Header("ColliderEnter側のオプション")]
+    public bool IsDispatchThisGameObject = false;
     public ColliderEvent _OnColliderEvent;
     public ColliderEvent _OnColliderExitEvent;
 
@@ -19,26 +21,54 @@ public class CollisionEventDispacher : MonoBehaviour
     {
         if(!_isFirst && IsDetectOnlyOnce) return;
 
-        _OnColliderEvent.Invoke(other);
+        if(IsDispatchThisGameObject)
+        {
+            _OnColliderEvent.Invoke(this.GetComponent<Collider>());
+        }
+        else
+        {
+            _OnColliderEvent.Invoke(other);
+        }
     }
 
     private void OnCollisionEnter(Collision collision)
     {
         if(!_isFirst && IsDetectOnlyOnce) return;
 
-        _OnColliderEvent.Invoke(collision.collider);
+        if(IsDispatchThisGameObject)
+        {
+            _OnColliderEvent.Invoke(this.GetComponent<Collider>());
+        }
+        else
+        {
+            _OnColliderEvent.Invoke(collision.collider);
+        }
     }
 
     private void OnCollisionExit(Collision collision) 
     { 
         _isFirst = false;
-        _OnColliderExitEvent.Invoke(collision.collider);
+        if(IsDispatchThisGameObject)
+        {
+            _OnColliderExitEvent.Invoke(this.GetComponent<Collider>());
+        }
+        else
+        {
+            _OnColliderExitEvent.Invoke(collision.collider);
+        }
     }
 
     private void OnTriggerExit(Collider other)
     {
         _isFirst = false;
-        _OnColliderExitEvent.Invoke(other);
+        if(IsDispatchThisGameObject)
+        {
+            _OnColliderExitEvent.Invoke(this.GetComponent<Collider>());
+        }
+        else
+        {
+            _OnColliderExitEvent.Invoke(other);
+        }
     }
 
 }

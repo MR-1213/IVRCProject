@@ -8,9 +8,9 @@ using System;
 public class ScenarioEventManager : MonoBehaviour
 {
     [SerializeField]
-    private TextMeshProUGUI _textMesh;
+    private TextMeshProUGUI _textMesh; // 会話ダイアログを表示するTextUI
     [SerializeField]
-    private AudioSource _seAudioSource;
+    private AudioSource _seAudioSource; // SE用のAudioSource
     [SerializeField]
     private AudioClip _feedSE;
 
@@ -18,6 +18,8 @@ public class ScenarioEventManager : MonoBehaviour
     private GameObject _meltPointMarker;
     [SerializeField]
     private GameObject[] _goalMarkers;
+
+    private bool _isTutorialCompletedCalled = false;
 
     [SerializeField]
     [TextArea]
@@ -32,6 +34,7 @@ public class ScenarioEventManager : MonoBehaviour
         "まずは名古屋駅構内に入り、<color=red>赤色</color>の目印まで向かいましょう！",
         "",
         "『移動方法』左スティックで移動・回転ができます。メニューボタンは押さないように注意してください！",
+        "",
     });
 
     [SerializeField]
@@ -53,19 +56,22 @@ public class ScenarioEventManager : MonoBehaviour
         "ヘッドセットを外してください。",
     });
 
+    private Coroutine? _currentScenarioCoroutine = null;
+
     public void StartIntroduction(Action? callback = null)
     {
-        StartCoroutine(PlayScenarioEvent(_introductionText, callback));
+        _currentScenarioCoroutine = StartCoroutine(PlayScenarioEvent(_introductionText, callback));
     }
 
     public void StartTutorialCompleted(Action? callback = null)
     {
-        StartCoroutine(PlayScenarioEvent(_tutorialCompletedText, callback));
+        _isTutorialCompletedCalled = true;
+        _currentScenarioCoroutine = StartCoroutine(PlayScenarioEvent(_tutorialCompletedText, callback));
     }
 
     public void StartGameCompleted(Action? callback = null)
     {
-        StartCoroutine(PlayScenarioEvent(_gameCompletedText, callback));
+        _currentScenarioCoroutine = StartCoroutine(PlayScenarioEvent(_gameCompletedText, callback));
     }
 
     private IEnumerator PlayScenarioEvent(string text, Action? callback)
@@ -74,13 +80,15 @@ public class ScenarioEventManager : MonoBehaviour
 
         // テキストUIを表示
         _textMesh.gameObject.SetActive(true);
+        _textMesh.fontSize = 9;
         var isFirst = true;
         var meltPointMarkerEnabled = false;
         foreach (var line in text.Split('\n'))
         {
+            Debug.Log(line);
             if (line != string.Empty)
             {
-                // ポイントの強調テキストに合わせてオブジェクトを表示する
+                // 融かすポイントの強調テキストに合わせてオブジェクトを表示する
                 if (line.Contains("<color=red>"))
                 {
                     meltPointMarkerEnabled = true;
@@ -117,6 +125,7 @@ public class ScenarioEventManager : MonoBehaviour
             {
                 yield return null;
             }
+            Debug.Log("入力を受け付けました");
             if (isFirst)
             {
                 isFirst = false;
@@ -135,7 +144,47 @@ public class ScenarioEventManager : MonoBehaviour
 
         // テキストUIを非表示
         _textMesh.gameObject.SetActive(false);
-        // コールバックを起動
+        // コルーチン終了・コールバック起動
+        _currentScenarioCoroutine = null;
         callback?.Invoke();
     }
+
+    public void CancelScenarioEvent()
+    {
+        if (_currentScenarioCoroutine != null)
+        {
+            StopCoroutine(_currentScenarioCoroutine);
+            if(_isTutorialCompletedCalled)
+            {
+                _isTutorialCompletedCalled = false;
+                foreach (var item in _goalMarkers)
+                {
+                    item.layer = LayerMask.NameToLayer("WallHack");
+                }
+            }
+        }
+        _textMesh.gameObject.SetActive(false);
+        _meltPointMarker.SetActive(false);
+    }
+
+    public void StartMeltModeMessage()
+    {
+        // テキストUIを表示
+        _textMesh.gameObject.SetActive(true);
+        _textMesh.color = Color.white;
+        _textMesh.fontSize = 9;
+
+        _textMesh.text = "壁と対面し、トリガーボタンを押して、\n壁を融かし始めよう!";
+    }
+
+    public void PushWallMessage()
+    {
+        // テキストUIを表示
+        _textMesh.gameObject.SetActive(true);
+        _textMesh.color = Color.white;
+        _textMesh.fontSize = 9;
+
+        _textMesh.text = "壁を押して融かせ！";
+    }
+    
 }
