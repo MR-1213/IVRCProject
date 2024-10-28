@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Meta.XR.BuildingBlocks;
@@ -10,9 +11,11 @@ public class WallAnchorManager : MonoBehaviour
 
     [SerializeField] private SpatialAnchorLoaderBuildingBlock _anchorLoader;
     [SerializeField] private ControllerButtonsMapper _controllerButtonsMapper;
+    [SerializeField] private SpatialAnchorCoreBuildingBlock _spatialAnchorCore;
+    [SerializeField] private SpatialAnchorLocalStorageManagerBuildingBlock _storage;
 
     private List<OVRSpatialAnchor> _anchors = new List<OVRSpatialAnchor>();
-
+    
     private void Start()
     {
         Debug.Log("WallAnchorManager Init");

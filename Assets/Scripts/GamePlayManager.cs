@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
 
 public class GamePlayManager : MonoBehaviour
 {
@@ -16,14 +17,48 @@ public class GamePlayManager : MonoBehaviour
     public AudioClip StationBGM;
     public AudioClip MeltBGM;
 
-    private int pointNum = 1;
+    // タイマー関連
+    [Header("タイマー(s)")]
+    public float _timer = 300f;
+    private float _elapsedTime = 0f;
+    private bool _isGameStart = false;
+    [SerializeField] private Text _timerText;
 
+    private int pointNum = 1;
     private bool _isScenarioEventCompleted = false;
 
     private void Start()
     {
         _isScenarioEventCompleted = false;
         _scenarioEventManager.StartIntroduction(ScenarioEventCompleted);
+    }
+
+    private void Update()
+    {
+        if(_isGameStart)
+        {
+            _elapsedTime += Time.deltaTime;
+            if(_elapsedTime >= _timer)
+            {
+                Debug.Log("時間切れ！");
+                _timerText.text = "時間切れ！";
+                _isGameStart = false;
+                return;
+            }
+
+            float remainingTime = _timer - _elapsedTime;
+            int minute = (int)remainingTime / 60;
+            int second = (int)remainingTime % 60;
+
+            if(minute != 0)
+            {
+                _timerText.text = $"残り{minute}分{second}秒";
+            }
+            else
+            {
+                _timerText.text = $"残り{second}秒";
+            }
+        }
     }
 
     #region シナリオイベント関連
@@ -55,6 +90,8 @@ public class GamePlayManager : MonoBehaviour
         {
             return;
         }
+
+        _isGameStart = true;
 
         CancelScenarioEvent();
 
