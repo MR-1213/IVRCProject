@@ -15,6 +15,7 @@ public class MeltMode : MonoBehaviour
     [SerializeField] private GamePlayManager _gamePlayManager;
     [SerializeField] private ScenarioEventManager _scenarioEventManager;
     [SerializeField] private PlayerMovementController _playerMovementController;
+    [SerializeField] private WallAnchorManager _wallAnchorManager;
     [SerializeField] private SerialManager_Bulb _serialManager_Bulb;
     [SerializeField] private SerialManager_Stepping _serialManager_Stepping;
     [SerializeField] private SerialManager_RoadCell _serialManager_RoadCell;
@@ -116,6 +117,8 @@ public class MeltMode : MonoBehaviour
                     _playerMovementController.transform.position = new Vector3(CurrentMeltPoint.position.x, _playerMovementController.transform.position.y, CurrentMeltPoint.position.z);
                     _initialHeight = _playerMovementController.transform.position.y;
 
+                    
+
                     meltTime = 0f;
                     Power = 0;
                 }
@@ -157,7 +160,11 @@ public class MeltMode : MonoBehaviour
             // トリガーボタンを押したら融かすモードを開始
             Debug.Log("WaitForMeltMode");
             _playerRigidbody.useGravity = false;
+
             _scenarioEventManager.PushWallMessage();
+
+            _wallAnchorManager.SetAnchorInstance();
+
             ChangeMeltModeState(MeltModeStateEnum.MeltExcecute);
         }
     }
@@ -166,18 +173,21 @@ public class MeltMode : MonoBehaviour
     #region 融かすモード実行
     private void MeltModeExcecute(float meltTime)
     {
-        if(OVRInput.GetDown(OVRInput.Button.PrimaryHandTrigger))
-        //if ((Power >= 3 && Power < 1000))
+        //if(OVRInput.GetDown(OVRInput.Button.PrimaryHandTrigger))
+        if ((Power >= 30 && Power < 10000) && !_meltEnter)
         {
             // シナリオUIを終了し、非表示にする
             _scenarioEventManager.CancelScenarioEvent();
             _invisibleWall.GetComponent<BoxCollider>().enabled = false;
 
-            Power = 100;
+            //Power = 100;
             Debug.Log($"融かすモード開始 Power => {Power}");
 
             // 融ける音を再生
             _gamePlayManager.MeltBGMPlay();
+
+            //アンカーを手に追従させる
+            _wallAnchorManager.Active_FollowAnchorToRightHand();
             
             // バルブを開ける
             _serialManager_Bulb.SetMeltWallNumber("2");
@@ -193,15 +203,18 @@ public class MeltMode : MonoBehaviour
 
             
         }
-        else if(OVRInput.GetUp(OVRInput.Button.PrimaryHandTrigger))
-        //else if(Power < 1)
+        //else if(OVRInput.GetUp(OVRInput.Button.PrimaryHandTrigger))
+        else if(Power < 30)
         {
             _meltEnter = false;
             meltTime = 0f;
 
             _serialManager_Bulb.SetMeltWallNumber("0");
             _serialManager_Stepping.SetSyringeState("0");
+
             _gamePlayManager.BGMStop();
+
+            _wallAnchorManager.Inactive_FollowAnchorToRightHand();
             
         }
         else if(_meltEnter)
@@ -272,7 +285,7 @@ public class MeltMode : MonoBehaviour
     {
         // 抵抗力0 ~ 1の範囲(0:強い, 1:弱い)
         float resistancePower = 1f - Mathf.Pow(1f - _meltability, meltTime);
-        float progressSpeed = (Power / 30f) * resistancePower;
+        float progressSpeed = (Power / 150f) * resistancePower;
 
         return progressSpeed;
     }
@@ -281,6 +294,8 @@ public class MeltMode : MonoBehaviour
     #region 融かすモード終了
     private IEnumerator MeltComplete(float M_StartValue, float ABC_StartValue)
     {
+        _serialManager_Bulb.SetMeltWallNumber("0");
+        _serialManager_Stepping.SetSyringeState("0");
         Sequence sequence = DOTween.Sequence();
         sequence.Append(DOVirtual.Float(M_StartValue, 1f, 2.0f, value => _meltWallMaterial.SetFloat("_Current", value))).Join(DOVirtual.Float(ABC_StartValue, 10f, 2.0f, value => _alembicPlayer.CurrentTime = value));
         yield return sequence.Play().WaitForCompletion();

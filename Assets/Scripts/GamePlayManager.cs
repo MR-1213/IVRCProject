@@ -182,7 +182,10 @@ public class GamePlayManager : MonoBehaviour
         }
 
         _meltMode.ChangeMeltModeState(MeltMode.MeltModeStateEnum.Idle);
+
         StationBGMPlay();
+        _wallAnchorManager.Inactive_FollowAnchorToRightHand();
+
         _npcInstantiate.SetNPCNextPoint(pointNum);
     }
 

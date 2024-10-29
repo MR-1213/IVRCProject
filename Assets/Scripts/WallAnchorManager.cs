@@ -11,10 +11,9 @@ public class WallAnchorManager : MonoBehaviour
 
     [SerializeField] private SpatialAnchorLoaderBuildingBlock _anchorLoader;
     [SerializeField] private ControllerButtonsMapper _controllerButtonsMapper;
-    [SerializeField] private SpatialAnchorCoreBuildingBlock _spatialAnchorCore;
-    [SerializeField] private SpatialAnchorLocalStorageManagerBuildingBlock _storage;
 
     private List<OVRSpatialAnchor> _anchors = new List<OVRSpatialAnchor>();
+    private List<GameObject> _anchorInstances = new List<GameObject>();
     
     private void Start()
     {
@@ -74,6 +73,24 @@ public class WallAnchorManager : MonoBehaviour
         }
     }
 
+    public void SetAnchorInstance()
+    {
+        foreach(var anchor in _anchors)
+        {
+            var anchorInstance = Instantiate(anchor, anchor.transform.position, anchor.transform.rotation);
+            _anchorInstances.Add(anchorInstance.gameObject);
+        }
+
+    }
+
+    public void Active_FollowAnchorToRightHand()
+    {
+        foreach(var anchorInstance in _anchorInstances)
+        {
+            anchorInstance.transform.parent = _rightControllerAnchor.transform;
+        }
+    }
+
     public void AnchorsInvisibility()
     {
         if(_anchors.Count == 0)
@@ -85,6 +102,14 @@ public class WallAnchorManager : MonoBehaviour
         foreach(var anchor in _anchors)
         {
             anchor.gameObject.SetActive(false);
+        }
+    }
+
+    public void Inactive_FollowAnchorToRightHand()
+    {
+        foreach(var anchorInstance in _anchorInstances)
+        {
+            anchorInstance.transform.parent = null;
         }
     }
 }
