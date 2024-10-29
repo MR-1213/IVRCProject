@@ -34,7 +34,6 @@ public class ScenarioEventManager : MonoBehaviour
         "まずは名古屋駅構内に入り、<color=red>赤色</color>の目印まで向かいましょう！",
         "",
         "『移動方法』左スティックで移動・回転ができます。メニューボタンは押さないように注意してください！",
-        "",
     });
 
     [SerializeField]
@@ -83,35 +82,33 @@ public class ScenarioEventManager : MonoBehaviour
         _textMesh.fontSize = 9;
         var isFirst = true;
         var meltPointMarkerEnabled = false;
-        foreach (var line in text.Split('\n'))
+
+        // 空行で区切る
+        foreach (var chunk in text.Split("\n\n"))
         {
-            Debug.Log(line);
-            if (line != string.Empty)
+            Debug.Log(chunk);
+            // 融かすポイントの強調テキストに合わせてオブジェクトを表示する
+            if (chunk.Contains("<color=red>"))
             {
-                // 融かすポイントの強調テキストに合わせてオブジェクトを表示する
-                if (line.Contains("<color=red>"))
-                {
-                    meltPointMarkerEnabled = true;
-                    _meltPointMarker.SetActive(true);
-                }
-                else if (meltPointMarkerEnabled)
-                {
-                    meltPointMarkerEnabled = false;
-                    _meltPointMarker.SetActive(false);
-                }
-
-                // ゴールを強調表示する
-                if (line.Contains("<color=green>"))
-                {
-                    foreach (var item in _goalMarkers)
-                    {
-                        item.layer = LayerMask.NameToLayer("WallHack");
-                    }
-                }
-
-                _textMesh.text += line;
-                continue;
+                meltPointMarkerEnabled = true;
+                _meltPointMarker.SetActive(true);
             }
+            else if (meltPointMarkerEnabled)
+            {
+                meltPointMarkerEnabled = false;
+                _meltPointMarker.SetActive(false);
+            }
+
+            // ゴールを強調表示する
+            if (chunk.Contains("<color=green>"))
+            {
+                foreach (var item in _goalMarkers)
+                {
+                    item.layer = LayerMask.NameToLayer("WallHack");
+                }
+            }
+
+            _textMesh.text = chunk;
 
             // 文字送りを始める
             _textMesh.text += "\n【トリガーボタンで次へ】";
@@ -131,11 +128,12 @@ public class ScenarioEventManager : MonoBehaviour
                 isFirst = false;
             }
 
-            // テキストをクリア
-            _textMesh.text = "";
             // SEを再生
             _seAudioSource.PlayOneShot(_feedSE);
         }
+
+        // テキストをクリア
+        _textMesh.text = "";
 
         if (meltPointMarkerEnabled)
         {
@@ -154,7 +152,7 @@ public class ScenarioEventManager : MonoBehaviour
         if (_currentScenarioCoroutine != null)
         {
             StopCoroutine(_currentScenarioCoroutine);
-            if(_isTutorialCompletedCalled)
+            if (_isTutorialCompletedCalled)
             {
                 _isTutorialCompletedCalled = false;
                 foreach (var item in _goalMarkers)
@@ -186,5 +184,4 @@ public class ScenarioEventManager : MonoBehaviour
 
         _textMesh.text = "壁を押して融かせ！";
     }
-    
 }
