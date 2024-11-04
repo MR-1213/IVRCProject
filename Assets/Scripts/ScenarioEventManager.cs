@@ -52,7 +52,17 @@ public class ScenarioEventManager : MonoBehaviour
         "あなたは無事にあおなみ線の改札口まで到着しました！",
         "",
         "体験いただきありがとうございました。",
-        "ヘッドセットを外してください。",
+        "係りの指示に従い、ヘッドセットを外してください。",
+    });
+
+    [SerializeField]
+    [TextArea]
+    private string _timeUpText = string.Join("\n", new string[] {
+        "時間切れです！",
+        "残念ながら目的の電車は行ってしまいました...",
+        "",
+        "体験いただきありがとうございました。",
+        "係りの指示に従い、ヘッドセットを外してください。",
     });
 
     private Coroutine? _currentScenarioCoroutine = null;
@@ -71,6 +81,11 @@ public class ScenarioEventManager : MonoBehaviour
     public void StartGameCompleted(Action? callback = null)
     {
         _currentScenarioCoroutine = StartCoroutine(PlayScenarioEvent(_gameCompletedText, callback));
+    }
+
+    public void StartTimeUp(Action? callback = null)
+    {
+        _currentScenarioCoroutine = StartCoroutine(PlayScenarioEvent(_timeUpText, callback));
     }
 
     private IEnumerator PlayScenarioEvent(string text, Action? callback)
@@ -172,7 +187,7 @@ public class ScenarioEventManager : MonoBehaviour
         _textMesh.color = Color.white;
         _textMesh.fontSize = 9;
 
-        _textMesh.text = "壁と対面し、トリガーボタンを押して、\n壁を融かし始めよう!";
+        _textMesh.text = "壁を押して融かせ！";
     }
 
     public void PushWallMessage()

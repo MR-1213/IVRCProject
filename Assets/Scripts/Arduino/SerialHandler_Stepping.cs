@@ -10,7 +10,7 @@ public class SerialHandler_Stepping : MonoBehaviour
 
     [SerializeField] private SerialManager_Stepping _serialManager_step;
 
-    public string portName = "COM3";//‚±‚±‚É‚ÍArduino‚Ìƒ|[ƒg”Ô†‚ð‹L“ü
+    public string portName = "COM3";//ã“ã“ã«ã¯Arduinoã®ãƒãƒ¼ãƒˆç•ªå·ã‚’è¨˜å…¥
     int baudRate = 9600;
 
     private SerialPort serialPort_;
@@ -56,7 +56,7 @@ public class SerialHandler_Stepping : MonoBehaviour
 
     private void Close()
     {
-        //Write("0"); //III¡‰ñ‚ÌƒR[ƒh‚Å‚Í‚±‚Ìs‚ª‚È‚¢‚ÆŽÀsI—¹Žž‚ÉLED‚ªÁ‚¦‚È‚¢‚Ì‚Å’ˆÓIII
+        Write("0"); // åœæ­¢æ™‚ã«ãƒãƒ³ãƒ—ãŒæ­¢ã¾ã‚‰ãªããªã£ãŸã®ã§ç·Šæ€¥åœæ­¢ç”¨ã«è¿½åŠ 
         isNewMessageReceived_ = false;
         isRunning_ = false;
 
@@ -72,7 +72,7 @@ public class SerialHandler_Stepping : MonoBehaviour
         }
     }
 
-    
+
     private void Read()
     {
         /*
@@ -91,7 +91,7 @@ public class SerialHandler_Stepping : MonoBehaviour
         }
         */
     }
-    
+
 
     public void Write(string message)
     {
@@ -102,7 +102,7 @@ public class SerialHandler_Stepping : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning("ƒXƒeƒbƒsƒ“ƒOƒ‚[ƒ^[:" + e.Message);
+            Debug.LogWarning("ã‚¹ãƒ†ãƒƒãƒ”ãƒ³ã‚°ãƒ¢ãƒ¼ã‚¿ãƒ¼:" + e.Message);
 
         }
     }

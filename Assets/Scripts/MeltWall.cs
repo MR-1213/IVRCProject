@@ -30,6 +30,8 @@ public class MeltWall : MonoBehaviour
         }
     }
 
+    public Vector3 CurrentPosition => Vector3.Lerp(_startPoint.position, _endPoint.position, _current);
+
     private void Start()
     {
         _material = _renderer.material;

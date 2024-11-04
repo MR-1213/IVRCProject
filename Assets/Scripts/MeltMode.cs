@@ -1,13 +1,7 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
-using TMPro;
 using UnityEngine.Formats.Alembic.Importer;
-using UnityEditor;
 using DG.Tweening;
-using NUnit.Framework.Internal;
-using UnityEngine.Rendering.Universal.Internal;
 using System;
 
 public class MeltMode : MonoBehaviour
@@ -19,6 +13,8 @@ public class MeltMode : MonoBehaviour
     [SerializeField] private SerialManager_Bulb _serialManager_Bulb;
     [SerializeField] private SerialManager_Stepping _serialManager_Stepping;
     [SerializeField] private SerialManager_RoadCell _serialManager_RoadCell;
+
+    [SerializeField] private ParticleSystem particleSystem;
 
     public enum MeltModeStateEnum
     {
@@ -40,7 +36,8 @@ public class MeltMode : MonoBehaviour
     public float endStepForwardX = 0f;
     public float endStepForwardZ = 0f;
     public bool IsHeightChange = false;
-    public float HeightChangeValue = 0f;
+    public float HeightChangeStart = 0f;
+    public float HeightChangeEnd = 0f;
 
     private float meltTime = 0f;
     public float meltDistance = 56f;
@@ -52,6 +49,10 @@ public class MeltMode : MonoBehaviour
     private Rigidbody _playerRigidbody;
     private Coroutine _excecuteCoroutine;
     private bool _meltEnter = false;
+
+    [SerializeField] private Transform _meltStartPoint;
+    [SerializeField] private Transform _meltEndPoint;
+    [SerializeField] private OVRCameraRig _ovrCameraRig;
 
     private readonly object _lock = new object();
 
@@ -81,8 +82,11 @@ public class MeltMode : MonoBehaviour
         {
             lock (_lock)
             {
-                Debug.Log("Set: " + value);
-                _power = value;
+                if (value != _power)
+                {
+                    Debug.Log("Set: " + value);
+                    _power = value;
+                }
             }
         }
     }
@@ -132,7 +136,7 @@ public class MeltMode : MonoBehaviour
                     _stateEnter = false;
                     Power = 0;
                     StartCoroutine(MeltComplete(_meltWallMaterial.GetFloat("_Current"), _alembicPlayer.CurrentTime));
-                    _playerMovementController.transform.position = new Vector3(_playerMovementController.transform.position.x - endStepForwardX, _initialHeight + HeightChangeValue, _playerMovementController.transform.position.z + endStepForwardZ);
+                    _playerMovementController.transform.position = new Vector3(_playerMovementController.transform.position.x - endStepForwardX, _initialHeight + HeightChangeEnd, _playerMovementController.transform.position.z + endStepForwardZ);
                     _playerRigidbody.useGravity = true;
                     
                     StartCoroutine(SteppingReverse());
@@ -155,11 +159,13 @@ public class MeltMode : MonoBehaviour
     #region 融かす準備待ち
     private void WaitForStartMeltMode()
     {
-        if(OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger))
+        //if(/OVRInput.GetDown(OVRInput.Button.PrimaryIndexTrigger))
+        if(Power >= 30 && Power < 10000)
         {
             // トリガーボタンを押したら融かすモードを開始
             Debug.Log("WaitForMeltMode");
             _playerRigidbody.useGravity = false;
+            LookAtWall();
 
             _scenarioEventManager.PushWallMessage();
 
@@ -167,6 +173,30 @@ public class MeltMode : MonoBehaviour
 
             ChangeMeltModeState(MeltModeStateEnum.MeltExcecute);
         }
+    }
+
+    private void LookAtWall()
+    {
+        float currentRotY = _ovrCameraRig.centerEyeAnchor.eulerAngles.y;
+        Vector3 lookDirection = _meltEndPoint.position - _meltStartPoint.position;
+        float targetRot = Mathf.Atan2(lookDirection.x, lookDirection.z) * Mathf.Rad2Deg;
+
+        float difference = targetRot - currentRotY;
+        _ovrCameraRig.transform.Rotate(0f, difference, 0f);
+
+        particleSystem.transform.rotation = Quaternion.LookRotation(-lookDirection.normalized, Vector3.up);
+
+        Vector3 currentPosition = _ovrCameraRig.centerEyeAnchor.localPosition;
+        _ovrCameraRig.trackingSpace.localPosition = new Vector3(OffsetValue(currentPosition.x), -1.5f, OffsetValue(currentPosition.z));
+    }
+
+    private float OffsetValue(float value)
+    {
+        if(value != 0)
+        {
+            value *= -1f;
+        }
+        return value;
     }
     #endregion
 
@@ -180,7 +210,7 @@ public class MeltMode : MonoBehaviour
             _scenarioEventManager.CancelScenarioEvent();
             _invisibleWall.GetComponent<BoxCollider>().enabled = false;
 
-            //Power = 100;
+            //Power = 300;
             Debug.Log($"融かすモード開始 Power => {Power}");
 
             // 融ける音を再生
@@ -194,14 +224,8 @@ public class MeltMode : MonoBehaviour
             _serialManager_Stepping.SetSyringeState("1");
 
             _meltEnter = true;
-            
 
-            // if(Power > 1000)
-            // {
-                
-            // }
-
-            
+            if (!particleSystem.isPlaying) { particleSystem.Play(); }
         }
         //else if(OVRInput.GetUp(OVRInput.Button.PrimaryHandTrigger))
         else if(Power < 30)
@@ -215,7 +239,8 @@ public class MeltMode : MonoBehaviour
             _gamePlayManager.BGMStop();
 
             _wallAnchorManager.Inactive_FollowAnchorToRightHand();
-            
+
+            if (particleSystem.isPlaying) { particleSystem.Stop(); }
         }
         else if(_meltEnter)
         {
@@ -246,7 +271,8 @@ public class MeltMode : MonoBehaviour
             float height;
             if (IsHeightChange)
             {
-                height = HeightChangeValue;
+                float t = (_meltedDistance / meltDistance);
+                height = Mathf.Lerp(HeightChangeStart, HeightChangeEnd, t);
             }
             else
             {
@@ -256,7 +282,16 @@ public class MeltMode : MonoBehaviour
             var nextPos = new Vector3(_playerMovementController.transform.position.x - speedX, _initialHeight + height, _playerMovementController.transform.position.z + speedZ);
             _playerMovementController.transform.position = nextPos;
 
-            float currentTime= Mathf.Lerp(0.01666f, 10f, (_meltedDistance + 4.0f) / meltDistance);
+            float current = (_meltedDistance + 4.0f) / meltDistance;
+            float currentTime = current * _alembicPlayer.Duration;
+
+            if (_meltWall.TryGetComponent<MeltWall>(out var wall))
+            {
+                // NOTE: アニメーションの挙動が意図したものと異なっていたため変更。高さが変わるのはMeltWall2だけであるためこれを条件にする
+                wall.Current = current;
+                // _playerMovementController.transform.position = wall.CurrentPosition;
+                return;
+            }
             if(currentTime >= 10f)
             {
                 currentTime = 10f;
@@ -278,6 +313,7 @@ public class MeltMode : MonoBehaviour
         else
         {
             meltTime = 0f;
+            if (particleSystem.isPlaying) { particleSystem.Stop(); }
         }
     }
 
@@ -294,6 +330,7 @@ public class MeltMode : MonoBehaviour
     #region 融かすモード終了
     private IEnumerator MeltComplete(float M_StartValue, float ABC_StartValue)
     {
+        if (particleSystem.isPlaying) { particleSystem.Stop(); }
         _serialManager_Bulb.SetMeltWallNumber("0");
         _serialManager_Stepping.SetSyringeState("0");
         Sequence sequence = DOTween.Sequence();
@@ -312,5 +349,4 @@ public class MeltMode : MonoBehaviour
         Power = 0;
     }
     #endregion
-    
 }

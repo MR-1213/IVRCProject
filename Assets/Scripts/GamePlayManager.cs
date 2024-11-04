@@ -43,6 +43,7 @@ public class GamePlayManager : MonoBehaviour
                 Debug.Log("時間切れ！");
                 _timerText.text = "時間切れ！";
                 _isGameStart = false;
+                _scenarioEventManager.StartTimeUp();
                 return;
             }
 
@@ -159,6 +160,7 @@ public class GamePlayManager : MonoBehaviour
     public void MeltEndEnter(Collider collider)
     {
         _wallAnchorManager.AnchorsInvisibility();
+        _wallAnchorManager.AnchorInstanceInvisibility();
 
         var _meltMode = collider.transform.parent.GetComponent<MeltMode>();
         if(_meltMode.MeltModeState == MeltMode.MeltModeStateEnum.Idle)

@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -19,8 +16,9 @@ public class CollisionEventDispacher : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        Debug.Log($"{this.name}: {_isFirst}");
         if(!_isFirst && IsDetectOnlyOnce) return;
-
+        
         if(IsDispatchThisGameObject)
         {
             _OnColliderEvent.Invoke(this.GetComponent<Collider>());
@@ -35,6 +33,7 @@ public class CollisionEventDispacher : MonoBehaviour
     {
         if(!_isFirst && IsDetectOnlyOnce) return;
 
+        
         if(IsDispatchThisGameObject)
         {
             _OnColliderEvent.Invoke(this.GetComponent<Collider>());
@@ -47,6 +46,7 @@ public class CollisionEventDispacher : MonoBehaviour
 
     private void OnCollisionExit(Collision collision) 
     { 
+        if(!_isFirst && IsDetectOnlyOnce) return;
         _isFirst = false;
         if(IsDispatchThisGameObject)
         {
@@ -60,6 +60,7 @@ public class CollisionEventDispacher : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
+        if(!_isFirst && IsDetectOnlyOnce) return;
         _isFirst = false;
         if(IsDispatchThisGameObject)
         {

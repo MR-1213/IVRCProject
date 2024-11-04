@@ -10,14 +10,20 @@ public class WallAnchorManager : MonoBehaviour
     [SerializeField] private GameObject _rightControllerAnchor;
 
     [SerializeField] private SpatialAnchorLoaderBuildingBlock _anchorLoader;
+    [SerializeField] private SpatialAnchorLocalStorageManagerBuildingBlock _storage;
     [SerializeField] private ControllerButtonsMapper _controllerButtonsMapper;
 
     private List<OVRSpatialAnchor> _anchors = new List<OVRSpatialAnchor>();
-    private List<GameObject> _anchorInstances = new List<GameObject>();
+    //private List<GameObject> _anchorInstances = new List<GameObject>();
+    [SerializeField] private GameObject _anchorInstance;
+
+    private Vector3 currentPosition;
+    private Quaternion currentRotation;
     
     private void Start()
     {
         Debug.Log("WallAnchorManager Init");
+        //_storage.Reset();
         // 保存済みのアンカーをロード
         _anchorLoader.LoadAnchorsFromDefaultLocalStorage();
         
@@ -28,7 +34,7 @@ public class WallAnchorManager : MonoBehaviour
         else
         {
             _controllerButtonsMapper.enabled = false;
-            _rightControllerAnchor.transform.GetChild(1).gameObject.SetActive(false);
+            _rightControllerAnchor.transform.GetChild(2).gameObject.SetActive(false);
         }
     }
 
@@ -54,11 +60,15 @@ public class WallAnchorManager : MonoBehaviour
         {
             foreach(var anchor in anchors)
             {
+                //anchor.gameObject.GetComponentInChildren<MeshRenderer>().enabled = false;
                 anchor.gameObject.SetActive(false);
             }
         }
     }
 
+    /// <summary>
+    /// ロードされたアンカーを表示する
+    /// </summary>
     public void AnchorsVisibility()
     {
         if(_anchors.Count == 0)
@@ -69,26 +79,34 @@ public class WallAnchorManager : MonoBehaviour
 
         foreach(var anchor in _anchors)
         {
+            //anchor.gameObject.GetComponentInChildren<MeshRenderer>().enabled = true;
             anchor.gameObject.SetActive(true);
         }
     }
 
+    /// <summary>
+    /// ロードされたアンカーの位置に移動用のアンカーオブジェクトを表示させる
+    /// </summary>
     public void SetAnchorInstance()
     {
         foreach(var anchor in _anchors)
         {
-            var anchorInstance = Instantiate(anchor, anchor.transform.position, anchor.transform.rotation);
-            _anchorInstances.Add(anchorInstance.gameObject);
+            currentPosition = anchor.transform.position;
+            currentRotation = anchor.transform.rotation;
         }
-
     }
 
+    /// <summary>
+    /// 右手に追従させる
+    /// </summary>
     public void Active_FollowAnchorToRightHand()
     {
-        foreach(var anchorInstance in _anchorInstances)
-        {
-            anchorInstance.transform.parent = _rightControllerAnchor.transform;
-        }
+        _anchorInstance.transform.parent = _rightControllerAnchor.transform;
+        _anchorInstance.transform.position = currentPosition;
+        _anchorInstance.transform.localPosition = new Vector3(-0.03f, 0.1f, 0f);
+        _anchorInstance.transform.rotation = currentRotation;
+        _anchorInstance.SetActive(true);
+        AnchorsInvisibility();
     }
 
     public void AnchorsInvisibility()
@@ -105,11 +123,15 @@ public class WallAnchorManager : MonoBehaviour
         }
     }
 
+    public void AnchorInstanceInvisibility()
+    {
+        _anchorInstance.SetActive(false);
+    }
+
     public void Inactive_FollowAnchorToRightHand()
     {
-        foreach(var anchorInstance in _anchorInstances)
-        {
-            anchorInstance.transform.parent = null;
-        }
+        _anchorInstance.transform.parent = null;
+        currentPosition = _anchorInstance.transform.position;
+        currentRotation = _anchorInstance.transform.rotation;
     }
 }
